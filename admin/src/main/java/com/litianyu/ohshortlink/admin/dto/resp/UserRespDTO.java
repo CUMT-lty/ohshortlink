@@ -1,5 +1,7 @@
 package com.litianyu.ohshortlink.admin.dto.resp;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.litianyu.ohshortlink.admin.common.serialize.PhoneDesensitizationSerializer;
 import lombok.Data;
 
 /**
@@ -24,8 +26,9 @@ public class UserRespDTO {
     private String realName;
 
     /**
-     * 手机号
+     * 手机号，此字段在返回的时候需要做数据脱敏处理
      */
+    @JsonSerialize(using = PhoneDesensitizationSerializer.class) // jackson 提供的注解，对注解字段进行解析
     private String phone;
 
     /**
