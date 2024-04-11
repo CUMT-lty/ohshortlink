@@ -11,7 +11,7 @@ public class BaseDO {
     /**
      * 创建时间
      */
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(fill = FieldFill.INSERT) // mybatis plus 提供的自动填充字段值的注解
     private Date createTime;
 
     /**
