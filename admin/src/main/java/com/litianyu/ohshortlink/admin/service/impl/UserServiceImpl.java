@@ -7,6 +7,8 @@ import com.litianyu.ohshortlink.admin.dao.entity.UserDO;
 import com.litianyu.ohshortlink.admin.dao.mapper.UserMapper;
 import com.litianyu.ohshortlink.admin.dto.resp.UserRespDTO;
 import com.litianyu.ohshortlink.admin.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.redisson.api.RBloomFilter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +18,11 @@ import org.springframework.stereotype.Service;
  */
 
 @Service // 标记为一个 bean
+@RequiredArgsConstructor  // Lombok 提供的注解，会生成一个包含常量，和标识了 NotNull 的变量的构造方法
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
 
-    /**
-     * 根据用户名查询用户信息
-     * @param username 用户名
-     * @return 用户返回实体
-     */
+    RBloomFilter<String> userRegisterCachePenetrationBloomFilter; // redisson 提供的布隆过滤器
+
     @Override
     public UserRespDTO getUserByUsername(String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class) // 规定好要查询的实体对象
@@ -31,5 +31,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         UserRespDTO result = new UserRespDTO();
         BeanUtils.copyProperties(userDO, result); // springboot 提供的方法，将 dao 转为 dto
         return result;
+    }
+
+    @Override
+    public Boolean hasUsername(String username) {
+        return !userRegisterCachePenetrationBloomFilter.contains(username);
     }
 }
