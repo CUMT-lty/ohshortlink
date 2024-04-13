@@ -2,12 +2,14 @@ package com.litianyu.ohshortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.admin.common.conversion.exception.ClientException;
 import com.litianyu.ohshortlink.admin.dao.entity.UserDO;
 import com.litianyu.ohshortlink.admin.dao.mapper.UserMapper;
 import com.litianyu.ohshortlink.admin.dto.req.UserRegisterReqDTO;
+import com.litianyu.ohshortlink.admin.dto.req.UserUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserRespDTO;
 import com.litianyu.ohshortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -76,5 +78,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         } finally {
             lock.unlock(); // 解锁
         }
+    }
+
+    @Override
+    public void update(UserUpdateReqDTO requestParam) {
+        // TODO：验证当前用户是否为登陆用户（只有已经登陆的用户可以修改自己的信息）（放在网关中做）
+        LambdaUpdateWrapper<UserDO> updateWrapper = Wrappers.lambdaUpdate(UserDO.class)
+                .eq(UserDO::getUsername, requestParam.getUsername());
+        baseMapper.update(BeanUtil.toBean(requestParam, UserDO.class), updateWrapper);
     }
 }

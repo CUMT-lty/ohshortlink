@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Results;
 import com.litianyu.ohshortlink.admin.dto.req.UserRegisterReqDTO;
+import com.litianyu.ohshortlink.admin.dto.req.UserUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserActualRespDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserRespDTO;
 import com.litianyu.ohshortlink.admin.service.UserService;
@@ -50,6 +51,12 @@ public class UserController {
     @PostMapping("/api/short-link/admin/v1/user")
     public Result<Void> register(@RequestBody UserRegisterReqDTO requestParam) {
         userService.register(requestParam);
+        return Results.success();
+    }
+
+    @PutMapping("/api/short-link/admin/v1/user")
+    public Result<Void> update(@RequestBody UserUpdateReqDTO requestParam) {
+        userService.update(requestParam);
         return Results.success();
     }
 
