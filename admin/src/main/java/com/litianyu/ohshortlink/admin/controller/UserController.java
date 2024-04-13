@@ -3,9 +3,11 @@ package com.litianyu.ohshortlink.admin.controller;
 import cn.hutool.core.bean.BeanUtil;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Results;
+import com.litianyu.ohshortlink.admin.dto.req.UserLoginReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.UserRegisterReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.UserUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserActualRespDTO;
+import com.litianyu.ohshortlink.admin.dto.resp.UserLoginRespDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserRespDTO;
 import com.litianyu.ohshortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -54,9 +56,37 @@ public class UserController {
         return Results.success();
     }
 
+    /**
+     * 修改用户信息
+     */
     @PutMapping("/api/short-link/admin/v1/user")
     public Result<Void> update(@RequestBody UserUpdateReqDTO requestParam) {
         userService.update(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 用户登录
+     */
+    @PostMapping("/api/short-link/admin/v1/user/login")
+    public Result<UserLoginRespDTO> login(@RequestBody UserLoginReqDTO requestParam) {
+        return Results.success(userService.login(requestParam));
+    }
+
+    /**
+     * 检查用户是否登录
+     */
+    @GetMapping("/api/short-link/admin/v1/user/check-login")
+    public Result<Boolean> checkLogin(@RequestParam("username") String username, @RequestParam("token") String token) {
+        return Results.success(userService.checkLogin(username, token));
+    }
+
+    /**
+     * 用户退出登录
+     */
+    @DeleteMapping("/api/short-link/admin/v1/user/logout")
+    public Result<Void> logout(@RequestParam("username") String username, @RequestParam("token") String token) {
+        userService.logout(username, token);
         return Results.success();
     }
 

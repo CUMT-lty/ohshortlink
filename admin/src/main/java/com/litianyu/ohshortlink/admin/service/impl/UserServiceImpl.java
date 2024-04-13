@@ -1,6 +1,9 @@
 package com.litianyu.ohshortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -8,8 +11,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.admin.common.conversion.exception.ClientException;
 import com.litianyu.ohshortlink.admin.dao.entity.UserDO;
 import com.litianyu.ohshortlink.admin.dao.mapper.UserMapper;
+import com.litianyu.ohshortlink.admin.dto.req.UserLoginReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.UserRegisterReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.UserUpdateReqDTO;
+import com.litianyu.ohshortlink.admin.dto.resp.UserLoginRespDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserRespDTO;
 import com.litianyu.ohshortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +23,14 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import static com.litianyu.ohshortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
+import static com.litianyu.ohshortlink.admin.common.constant.RedisCacheConstant.USER_LOGIN_KEY;
 import static com.litianyu.ohshortlink.admin.common.enums.UserErrorCodeEnum.*;
 
 
@@ -34,6 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter; // redisson 提供的布隆过滤器
     private final RedissonClient redissonClient;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public UserRespDTO getUserByUsername(String username) {
@@ -86,5 +97,54 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         LambdaUpdateWrapper<UserDO> updateWrapper = Wrappers.lambdaUpdate(UserDO.class)
                 .eq(UserDO::getUsername, requestParam.getUsername());
         baseMapper.update(BeanUtil.toBean(requestParam, UserDO.class), updateWrapper);
+    }
+
+    @Override
+    public UserLoginRespDTO login(UserLoginReqDTO requestParam) { // TODO：用户登陆这里后续可以考虑使用 jwt 来改造
+        LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class) // 在数据库中查找(用户名,密码)是否存在
+                .eq(UserDO::getUsername, requestParam.getUsername())
+                .eq(UserDO::getPassword, requestParam.getPassword())
+                .eq(UserDO::getDelFlag, 0); // 删除标志也要判断
+        UserDO userDO = baseMapper.selectOne(queryWrapper);
+        if (userDO == null) { // 如果(用户名,密码)不存在
+            throw new ClientException("用户不存在");
+        }
+        // token 放入 redis，后续能够快速查询用户是否登陆，并设置有效期，限定用户多久后需要重新登录
+//        stringRedisTemplate.opsForValue().set(uuid, JSON.toJSONString(userDO), 30L, TimeUnit.MINUTES); // 这么写会有已登陆的用户重复登陆的问题
+        /**
+         * 以 Hash 结构去存储用户的登陆状态，
+         * Key：login_用户名（注意这里是使用用户名去作为 key 的，因为 username 是唯一，这样可以防止用户重复登陆）
+         * Value：
+         *  Key：token标识
+         *  Val：JSON 字符串（用户信息）
+         */
+        Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + requestParam.getUsername());
+        if (CollUtil.isNotEmpty(hasLoginMap)) { // 如果用户已经登陆
+            stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES); // 跟新过期时间
+            String token = hasLoginMap.keySet().stream() // 拿到原 token
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElseThrow(() -> new ClientException("用户登录错误"));
+            return new UserLoginRespDTO(token); // 返回原 token
+        }
+        // 如果用户未登陆，生成新的 token 返回
+        String uuid = UUID.randomUUID().toString(); // hutool 提供的工具，生成一个 uuid 作为 token 返回
+        stringRedisTemplate.opsForHash().put(USER_LOGIN_KEY + requestParam.getUsername(), uuid, JSON.toJSONString(userDO));
+        stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES); // 设置过期时间
+        return new UserLoginRespDTO(uuid);
+    }
+
+    @Override
+    public Boolean checkLogin(String username, String token) {
+        return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token) != null;
+    }
+
+    @Override
+    public void logout(String username, String token) {
+        if (checkLogin(username, token)) { // 先验证是否登陆，只有已登陆的用户才能退出
+            stringRedisTemplate.delete(USER_LOGIN_KEY + username);
+            return;
+        }
+        throw new ClientException("用户Token不存在或用户未登录");
     }
 }
