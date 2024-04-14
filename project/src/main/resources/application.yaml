@@ -1,2 +1,23 @@
 server:
-  port: 8001
+  port: 8000 # TODO: 这个后续应该是网关的端口
+#  port: 8001
+
+spring: # 持久层配置文件
+#  datasource: # ShardingSphere 配置
+#    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver # ShardingSphere 对 Driver 自定义，实现分库分表等隐藏逻辑
+#    url: jdbc:shardingsphere:classpath:shardingsphere-config.yaml # ShardingSphere 配置文件路径
+  datasource: # 原数据库连接配置
+    username: root
+    password: 88888888
+    url: jdbc:mysql://127.0.0.1:3306/ohshortlink?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&serverTimezone=GMT%2B8 # 数据库连接配置
+    driver-class-name: com.mysql.cj.jdbc.Driver # 数据库驱动配置
+    hikari: # 数据库连接池，springboot 2.0 之后嵌入到官方组件规约中了，并且一些分库分表中间件对它的支持更友好
+      connection-test-query: select 1
+      connection-timeout: 20000
+      idle-timeout: 300000
+      maximum-pool-size: 5
+      minimum-idle: 5
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
