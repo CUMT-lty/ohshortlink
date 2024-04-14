@@ -37,7 +37,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     private final RedissonClient redissonClient;
 
-    @Value("20")
+    @Value("${short-link.group.max-num}")
     private Integer groupMaxNum;
 
     @Override

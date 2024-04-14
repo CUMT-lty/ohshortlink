@@ -79,7 +79,7 @@ public class ShortLinkDO extends BaseDO {
     /**
      * 描述
      */
-    @TableField("`describe`")
+    @TableField("`describe`") // 如果字段名和关键字冲突，需要用反引号包一下
     private String describe;
 
     /**
