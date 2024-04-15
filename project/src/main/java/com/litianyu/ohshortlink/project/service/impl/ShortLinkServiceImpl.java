@@ -1,14 +1,20 @@
 package com.litianyu.ohshortlink.project.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkCreateReqDTO;
+import com.litianyu.ohshortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.litianyu.ohshortlink.project.dto.resp.ShortLinkCreateRespDTO;
+import com.litianyu.ohshortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.litianyu.ohshortlink.project.service.ShortLinkService;
 import com.litianyu.ohshortlink.project.toolkit.HashUtil;
 import lombok.RequiredArgsConstructor;
@@ -106,5 +112,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             customGenerateCount++; // 重试次数 + 1
         }
         return shorUri;
+    }
+
+    @Override
+    public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getEnableStatus, 0) // 只显示启用的短链接
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .orderByDesc(ShortLinkDO::getCreateTime);
+        IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
+        return resultPage.convert(each -> BeanUtil.toBean(each, ShortLinkPageRespDTO.class));
     }
 }
