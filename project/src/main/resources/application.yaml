@@ -5,7 +5,7 @@ server:
 spring: # 持久层配置文件
   datasource: # ShardingSphere 配置
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver # ShardingSphere 对 Driver 自定义，实现分库分表等隐藏逻辑
-    url: jdbc:shardingsphere:classpath:shardingsphere-config.yaml # ShardingSphere 配置文件路径
+    url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yaml # ShardingSphere 配置文件路径（环境默认是 dev，这个参数可以通过 java -jar -database.env=dev 的方式去传入）
 #  datasource: # 原数据库连接配置
 #    username: root
 #    password: 88888888
