@@ -1,4 +1,4 @@
-package com.litianyu.ohshortlink.project.dto.resp;
+package com.litianyu.ohshortlink.admin.remote.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
