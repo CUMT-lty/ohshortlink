@@ -89,7 +89,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     }
 
     @Override
-    public List<ShortLinkGroupRespDTO> listGroup() { // TODO：后续需要完善逻辑
+    public List<ShortLinkGroupRespDTO> listGroup() { // TODO：后续需要完善逻辑（每个分组下的短链接数量需要发起远程调用才能拿到，这个放在后面添加）
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getUsername, UserContext.getUsername())
                 .eq(GroupDO::getDelFlag, 0)

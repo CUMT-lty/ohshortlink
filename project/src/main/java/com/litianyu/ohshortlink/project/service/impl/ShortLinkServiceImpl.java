@@ -6,14 +6,18 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.litianyu.ohshortlink.project.common.convention.exception.ClientException;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
+import com.litianyu.ohshortlink.project.common.enums.VailDateTypeEnum;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkPageReqDTO;
+import com.litianyu.ohshortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import com.litianyu.ohshortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import com.litianyu.ohshortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -30,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 短链接接口实现层
@@ -47,7 +52,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     // TODO：短链接缓存预热
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class) // TODO：这个注解的作用
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam); // 拿到 6 位短链接后缀
@@ -117,6 +122,53 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             customGenerateCount++; // 重试次数 + 1
         }
         return shorUri;
+    }
+
+    @Transactional(rollbackFor = Exception.class) // 事务管理，因为这个方法中涉及的数据库修改操作不止一个，需要有事务回滚措施
+    @Override
+    public void updateShortLink(ShortLinkUpdateReqDTO requestParam) { // TODO：这个逻辑后续需要优化，接口也没有调通
+//        verificationWhitelist(requestParam.getOriginUrl());
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getOriginGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .eq(ShortLinkDO::getEnableStatus, 0);
+        ShortLinkDO hasShortLinkDO = baseMapper.selectOne(queryWrapper); // 先获取修改之前的短链接
+        if (hasShortLinkDO == null) { // 如果原来的短链接不存在，直接抛异常
+            throw new ClientException("短链接记录不存在");
+        }
+        // 如果原来的短链接存在，则修改短链接
+        ShortLinkDO shortLinkDO = ShortLinkDO.builder() // 构造新的短链接数据
+                .domain(hasShortLinkDO.getDomain())
+                .shortUri(hasShortLinkDO.getShortUri())
+                .favicon(hasShortLinkDO.getFavicon())
+                .createdType(hasShortLinkDO.getCreatedType())
+                .gid(requestParam.getGid())
+                .originUrl(requestParam.getOriginUrl())
+                .describe(requestParam.getDescribe())
+                .validDateType(requestParam.getValidDateType())
+                .validDate(requestParam.getValidDate())
+                .build();
+        if (Objects.equals(hasShortLinkDO.getGid(), requestParam.getGid())) { // 如果没有给短链接切换分组
+            LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                    .eq(ShortLinkDO::getGid, requestParam.getGid())
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getEnableStatus, 0)
+                    .set(Objects.equals(requestParam.getValidDateType(), VailDateTypeEnum.PERMANENT.getType()), ShortLinkDO::getValidDate, null); // 如果短链接是永久有效，有效期应该为空
+            baseMapper.update(shortLinkDO, updateWrapper); // 直接更新短链接
+        } else { // 如果给短链接切换分组
+            LambdaUpdateWrapper<ShortLinkDO> linkUpdateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                    .eq(ShortLinkDO::getGid, hasShortLinkDO.getGid())
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getDelTime, 0L)
+                    .eq(ShortLinkDO::getEnableStatus, 0)
+                    .set(Objects.equals(requestParam.getValidDateType(), VailDateTypeEnum.PERMANENT.getType()), ShortLinkDO::getValidDate, null);
+            baseMapper.delete(linkUpdateWrapper); // 先删原数据
+            baseMapper.insert(shortLinkDO); // 再添加新数据
+
+        }
     }
 
     @Override

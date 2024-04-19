@@ -16,6 +16,7 @@ import com.litianyu.ohshortlink.admin.dto.req.UserRegisterReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.UserUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserLoginRespDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.UserRespDTO;
+import com.litianyu.ohshortlink.admin.service.GroupService;
 import com.litianyu.ohshortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBloomFilter;
@@ -45,6 +46,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter; // redisson 提供的布隆过滤器
     private final RedissonClient redissonClient;
     private final StringRedisTemplate stringRedisTemplate;
+    private final GroupService groupService;
 
     @Override
     public UserRespDTO getUserByUsername(String username) {
@@ -78,10 +80,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         try { // TODO: 这里 redis 和数据库双写的一致性怎么保证
             int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class)); // 插入
             if (inserted < 1) { // 插入失败
+                //  TODO：这里其实是出现了 mysql 和 redis 中数据不一致的情况了，这里是不是应该把用户名加入到 redis 布隆过滤器中，重建一致性，也防止后续总有这样的请求打到数据库
                 throw new ClientException(USER_SAVE_ERROR);
             }
             userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername()); // 写 redis 布隆过滤器
-//        groupService.saveGroup(requestParam.getUsername(), "默认分组");
+            groupService.saveGroup(requestParam.getUsername(), "默认分组"); // 每个用户注册的时候都会有一个默认的短链接分组
             // 如果第二阶段失败：再次注册该用户名，mysql 给用户名字段设置了唯一，所以 mysql 的 insert 操作会失败，可以保证 mysql 中的数据没问题
             // TODO：但是会导致布隆过滤器中一直没有对应的值，但实际上该值已经存在
         } catch (DuplicateKeyException ex) {
