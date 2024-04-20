@@ -8,11 +8,14 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.admin.common.biz.user.UserContext;
 import com.litianyu.ohshortlink.admin.common.conversion.exception.ClientException;
+import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
 import com.litianyu.ohshortlink.admin.dao.entity.GroupDO;
 import com.litianyu.ohshortlink.admin.dao.mapper.GroupMapper;
 import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.ShortLinkGroupRespDTO;
+import com.litianyu.ohshortlink.admin.remote.dto.ShortLinkRemoteService;
+import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.admin.service.GroupService;
 import com.litianyu.ohshortlink.admin.toolkit.RandomGenerator;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.litianyu.ohshortlink.admin.common.constant.RedisCacheConstant.LOCK_GROUP_CREATE_KEY;
@@ -34,6 +38,8 @@ import static com.litianyu.ohshortlink.admin.common.constant.RedisCacheConstant.
 @Service
 @RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
+
+    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {}; // TODO: 这个后期用 spring cloud 重构之后需要删掉
 
     private final RedissonClient redissonClient;
 
@@ -95,7 +101,15 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .eq(GroupDO::getDelFlag, 0)
                 .orderByDesc(GroupDO::getSortOrder, GroupDO::getUpdateTime);
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
-        return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class); // dao 转 dto
+        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkRemoteService
+                .listGroupShortLinkCount(groupDOList.stream().map(GroupDO::getGid).toList());
+        List<ShortLinkGroupRespDTO> shortLinkGroupRespDTOList = BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);// dao 转 dto
+        shortLinkGroupRespDTOList.forEach(each -> {
+            Optional<ShortLinkGroupCountQueryRespDTO> first = listResult.getData().stream()
+                    .filter(iterm -> Objects.equals(iterm.getGid(), each.getGid())).findFirst();
+            first.ifPresent(iterm -> each.setShortLinkCount(first.get().getShortLinkCount()));
+        });
+        return shortLinkGroupRespDTOList;
     }
 
     @Override
