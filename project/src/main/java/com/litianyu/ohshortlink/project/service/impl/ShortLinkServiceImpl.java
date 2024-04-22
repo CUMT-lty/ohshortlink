@@ -14,6 +14,8 @@ import com.litianyu.ohshortlink.project.common.convention.exception.ClientExcept
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
 import com.litianyu.ohshortlink.project.common.enums.VailDateTypeEnum;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
+import com.litianyu.ohshortlink.project.dao.entity.ShortLinkGotoDO;
+import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkGotoMapper;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkPageReqDTO;
@@ -23,18 +25,27 @@ import com.litianyu.ohshortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO
 import com.litianyu.ohshortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.litianyu.ohshortlink.project.service.ShortLinkService;
 import com.litianyu.ohshortlink.project.toolkit.HashUtil;
+import com.litianyu.ohshortlink.project.toolkit.LinkUtil;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.GOTO_SHORT_LINK_KEY;
 
 /**
  * 短链接接口实现层
@@ -45,14 +56,16 @@ import java.util.Objects;
 public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements ShortLinkService {
 
     private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
+    private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
+    private final ShortLinkGotoMapper shortLinkGotoMapper; // 引入短链接跳转持久层 mapper
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
 
     // TODO：短链接缓存预热
 
-    @Transactional(rollbackFor = Exception.class) // TODO：这个注解的作用
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam); // 拿到 6 位短链接后缀
@@ -77,9 +90,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .fullShortUrl(fullShortUrl)
 //                .favicon(getFavicon(requestParam.getOriginUrl())) // 网站图标
                 .build();
+        ShortLinkGotoDO linkGotoDO = ShortLinkGotoDO.builder() // 短链接跳转
+                .fullShortUrl(fullShortUrl)
+                .gid(requestParam.getGid())
+                .build();
         // 这里都是先写数据库再写 redis
         try { // 先尝试向数据库插入
             baseMapper.insert(shortLinkDO);
+            shortLinkGotoMapper.insert(linkGotoDO);
         } catch (DuplicateKeyException ex) { // 如果出现异常，说明短链接重复
             if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) { // 如果布隆过滤器中不存在，那么就向布隆过滤器中添加
                 shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl); // 把 fullShortUrl 添加到布隆过滤器中
@@ -91,7 +109,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         // 那么此时这个操作本质就是 mysql 做数据去重兜底 + redis和mysql一致性重建的过程
 
         // 如果写入数据库成功（说明短链接没有重复）
+        stringRedisTemplate.opsForValue().set( // 短链接跳转信息写入 redis
+                String.format(GOTO_SHORT_LINK_KEY, fullShortUrl), // key:完整短链接
+                requestParam.getOriginUrl(),                      // value:完整长链接
+                LinkUtil.getLinkCacheValidTime(requestParam.getValidDate()), TimeUnit.MILLISECONDS // 按照短链接有效期设置过期时间
+        );
         shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl); // 将 fullShortUrl 添加到布隆过滤器中
+        // TODO：删除短链接后，布隆过滤器如何删除？
         return ShortLinkCreateRespDTO.builder() // 返回 dto
                 .fullShortUrl("http://" + shortLinkDO.getFullShortUrl())
                 .originUrl(requestParam.getOriginUrl())
@@ -179,7 +203,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .eq(ShortLinkDO::getDelFlag, 0)
                 .orderByDesc(ShortLinkDO::getCreateTime);
         IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
-        return resultPage.convert(each -> BeanUtil.toBean(each, ShortLinkPageRespDTO.class));
+        return resultPage.convert(each -> {
+            ShortLinkPageRespDTO result = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
+            result.setDomain("http://" + result.getDomain());
+            return result;
+        });
     }
 
     @Override
@@ -193,5 +221,39 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .groupBy("gid");
         List<Map<String, Object>> shortLinkDOList = baseMapper.selectMaps(queryWrapper);
         return BeanUtil.copyToList(shortLinkDOList, ShortLinkGroupCountQueryRespDTO.class);
+    }
+
+    @SneakyThrows // lombok 提供的处理异常的注解
+    @Override
+    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
+        String serverName = request.getServerName();
+        String fullShortUrl = serverName + ":8001/" + shortUri; // TODO:这里后续可能需要修改
+        // 此时应该去查 link 表，拿到原始长链接
+        // 但是这里有个问题，就是 link 表是使用 gid 作为分表的分片键的，但是用户进行短链接跳转的时候，其实只会传来一个短链接，不会传 gid
+        // 所以这里就需要建goto路由表，去保存短链接对应的 gid
+        LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+        ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper); // 这里就拿到了 gid
+        if (shortLinkGotoDO == null) {
+            // TODO:这里后续需要进行封控
+            return;
+        }
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
+                .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .eq(ShortLinkDO::getEnableStatus, 0);
+        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+        if (shortLinkDO != null) {
+            ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl()); // 重定向
+            // TODO：这里目前是不能转发的，还需要域名以及nginx，可以先写入本地 host 文件
+        }
+
+        // 注意，fullShortUrl 的存在和不存在都是有可能被误判的
+        // 短链接不存在被误判是因为 mysql 和 redis 双写的第二阶段失败问题（且缓存没有重建）TODO：解决方法？
+        // 存在被误判是布隆过滤器的问题 TODO：是不是可以考虑在误判率比较高的时候对布隆过滤器进行扩容
+//        if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
+//
+//        }
     }
 }
