@@ -242,13 +242,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         // 查询布隆过滤器，确认短链接是否存在 --> 解决缓存穿透问题
         boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
         if (!contains) { // 如果不存在
-//            ((HttpServletResponse) response).sendRedirect("/page/notfound");
+            ((HttpServletResponse) response).sendRedirect("/page/notfound");
             return;
         }
         // TODO：检查空对象是否存在
         String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(gotoIsNullShortLink)) { // 如果空对象存在
-//            ((HttpServletResponse) response).sendRedirect("/page/notfound");
+            ((HttpServletResponse) response).sendRedirect("/page/notfound"); // 跳转到不存在页面
             return;
         }
         // 短链接存在（但有可能误判）
@@ -269,7 +269,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             if (shortLinkGotoDO == null) { // 如果 mysql 中不存在该条数据，说明非法请求打到了 mysql 上
                 // 在 redis 中存一个对应的空对象
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
-//                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+                ((HttpServletResponse) response).sendRedirect("/page/notfound"); // 跳转到不存在页面
                 return;
             }
             LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
@@ -281,7 +281,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             if (shortLinkDO == null || (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date()))) { // 如果短链接不存在或者短链接已过期 TODO：redis 中短链接的过期时间怎么和mysql同步
                 // 同理，缓存一个空对象
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
-//                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+                ((HttpServletResponse) response).sendRedirect("/page/notfound"); // 跳转到不存在页面
                 return;
             }
             // 成功获取短链接，放到缓存中

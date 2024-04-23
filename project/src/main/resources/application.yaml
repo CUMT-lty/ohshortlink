@@ -21,6 +21,10 @@ spring: # 持久层配置文件
     redis:
       host: 127.0.0.1
       port: 6379
+  mvc:
+    view:
+      prefix: /templates/
+      suffix: .html
 
 short-link:
   domain:
