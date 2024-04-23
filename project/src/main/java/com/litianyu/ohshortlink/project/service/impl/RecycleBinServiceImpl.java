@@ -1,11 +1,16 @@
 package com.litianyu.ohshortlink.project.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.req.RecycleBinSaveReqDTO;
+import com.litianyu.ohshortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
+import com.litianyu.ohshortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.litianyu.ohshortlink.project.service.RecycleBinService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -35,5 +40,20 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 .build();
         baseMapper.update(shortLinkDO, updateWrapper);
         stringRedisTemplate.delete(String.format(GOTO_SHORT_LINK_KEY, requestParam.getFullShortUrl())); // 将 redis 中对应的 key 删除
+    }
+
+    @Override
+    public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkRecycleBinPageReqDTO requestParam) { // TODO：后续待完善
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .in(ShortLinkDO::getGid, requestParam.getGidList()) // 这里不是 eq，改成 in
+                .eq(ShortLinkDO::getEnableStatus, 1) // 获取已回收（未启用）的短链接
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .orderByDesc(ShortLinkDO::getUpdateTime); // 按修改时间排序
+        IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
+        return resultPage.convert(each -> {
+            ShortLinkPageRespDTO result = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
+            result.setDomain("http://" + result.getDomain());
+            return result;
+        });
     }
 }
