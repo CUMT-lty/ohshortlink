@@ -42,6 +42,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,8 +65,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
-
-    // TODO：短链接缓存预热
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -229,7 +228,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @SneakyThrows // lombok 提供的处理异常的注解
     @Override
-    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) { // TODO：关注解决缓存问题的方案
+    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
         String fullShortUrl = serverName + ":8001/" + shortUri; // TODO:这里后续需要修改
         // 先尝试从 redis 中获取原始长链接
@@ -267,7 +266,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
                     .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
-            if (shortLinkGotoDO == null) { // 如果 mysql 中不存在该条数据，说明非法请求打到了 mysql 上 TODO：需要判断过期时间
+            if (shortLinkGotoDO == null) { // 如果 mysql 中不存在该条数据，说明非法请求打到了 mysql 上
                 // 在 redis 中存一个对应的空对象
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
 //                ((HttpServletResponse) response).sendRedirect("/page/notfound");
@@ -279,7 +278,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getDelFlag, 0)
                     .eq(ShortLinkDO::getEnableStatus, 0);
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-            if (shortLinkDO == null) { // 如果短链接在 link 表中不存在
+            if (shortLinkDO == null || (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date()))) { // 如果短链接不存在或者短链接已过期 TODO：redis 中短链接的过期时间怎么和mysql同步
                 // 同理，缓存一个空对象
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
 //                ((HttpServletResponse) response).sendRedirect("/page/notfound");
@@ -295,6 +294,5 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         } finally {
             lock.unlock(); // 释放分布式锁
         }
-        // TODO：复习三大缓存问题和对应的解决方法
     }
 }
