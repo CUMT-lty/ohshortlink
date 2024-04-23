@@ -14,7 +14,7 @@ import com.litianyu.ohshortlink.admin.dao.mapper.GroupMapper;
 import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.ShortLinkGroupRespDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.ShortLinkRemoteService;
+import com.litianyu.ohshortlink.admin.remote.ShortLinkRemoteService;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.admin.service.GroupService;
 import com.litianyu.ohshortlink.admin.toolkit.RandomGenerator;

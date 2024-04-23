@@ -1,4 +1,4 @@
-package com.litianyu.ohshortlink.admin.remote.dto;
+package com.litianyu.ohshortlink.admin.remote;
 
 
 // TODO：后期用 spring cloud 整合

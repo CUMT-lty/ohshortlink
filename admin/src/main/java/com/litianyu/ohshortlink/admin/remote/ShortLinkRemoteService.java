@@ -1,4 +1,4 @@
-package com.litianyu.ohshortlink.admin.remote.dto;
+package com.litianyu.ohshortlink.admin.remote;
 
 
 import cn.hutool.http.HttpUtil;
@@ -12,7 +12,9 @@ import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import com.litianyu.ohshortlink.project.dto.req.RecycleBinSaveReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkUpdateReqDTO;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.HashMap;
@@ -56,5 +58,9 @@ public interface ShortLinkRemoteService {
     default Result<String> getTitleByUrl(@RequestParam("url") String url){
         String resultStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/title?url=" + url);
         return JSON.parseObject(resultStr, new TypeReference<Result<String>>() {});
+    }
+
+    default void saveRecycleBin(@RequestBody RecycleBinSaveReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/save", JSON.toJSONString(requestParam));
     }
 }

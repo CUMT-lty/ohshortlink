@@ -1,7 +1,7 @@
 package com.litianyu.ohshortlink.admin.controller;
 
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
-import com.litianyu.ohshortlink.admin.remote.dto.ShortLinkRemoteService;
+import com.litianyu.ohshortlink.admin.remote.ShortLinkRemoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;

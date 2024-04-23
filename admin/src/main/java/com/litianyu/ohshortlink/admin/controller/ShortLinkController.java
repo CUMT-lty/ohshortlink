@@ -4,7 +4,7 @@ package com.litianyu.ohshortlink.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
-import com.litianyu.ohshortlink.admin.remote.dto.ShortLinkRemoteService;
+import com.litianyu.ohshortlink.admin.remote.ShortLinkRemoteService;
 import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
