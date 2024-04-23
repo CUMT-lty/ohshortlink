@@ -4,6 +4,7 @@ package com.litianyu.ohshortlink.project.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
+import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
@@ -45,7 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.GOTO_SHORT_LINK_KEY;
+import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.*;
 
 /**
  * 短链接接口实现层
@@ -68,6 +70,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Transactional(rollbackFor = Exception.class)
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
+        // 短链接写在4个地方：link表、goto表、redis、布隆过滤器
         String shortLinkSuffix = generateSuffix(requestParam); // 拿到 6 位短链接后缀
         String fullShortUrl = StrBuilder.create(createShortLinkDefaultDomain) // 注意，是(域名+6位短链接)唯一标识一条短链接，而不仅仅是后缀（即允许后缀重复但域名不同的短链接）
                 .append("/")
@@ -109,6 +112,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         // 那么此时这个操作本质就是 mysql 做数据去重兜底 + redis和mysql一致性重建的过程
 
         // 如果写入数据库成功（说明短链接没有重复）
+        // 缓存预热
         stringRedisTemplate.opsForValue().set( // 短链接跳转信息写入 redis
                 String.format(GOTO_SHORT_LINK_KEY, fullShortUrl), // key:完整短链接
                 requestParam.getOriginUrl(),                      // value:完整长链接
@@ -225,35 +229,72 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @SneakyThrows // lombok 提供的处理异常的注解
     @Override
-    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
+    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) { // TODO：关注解决缓存问题的方案
         String serverName = request.getServerName();
-        String fullShortUrl = serverName + ":8001/" + shortUri; // TODO:这里后续可能需要修改
-        // 此时应该去查 link 表，拿到原始长链接
-        // 但是这里有个问题，就是 link 表是使用 gid 作为分表的分片键的，但是用户进行短链接跳转的时候，其实只会传来一个短链接，不会传 gid
-        // 所以这里就需要建goto路由表，去保存短链接对应的 gid
-        LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
-                .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
-        ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper); // 这里就拿到了 gid
-        if (shortLinkGotoDO == null) {
-            // TODO:这里后续需要进行封控
+        String fullShortUrl = serverName + ":8001/" + shortUri; // TODO:这里后续需要修改
+        // 先尝试从 redis 中获取原始长链接
+        String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
+        if (StrUtil.isNotBlank(originalLink)) { // 如果 redis 中能查到原始短链接
+            // TODO：这里目前是不能转发的，还需要域名以及nginx，可以先写入本地 host 文件
+            ((HttpServletResponse) response).sendRedirect(originalLink); // 直接重定向
             return;
         }
-        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
-                .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
-                .eq(ShortLinkDO::getDelFlag, 0)
-                .eq(ShortLinkDO::getEnableStatus, 0);
-        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-        if (shortLinkDO != null) {
-            ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl()); // 重定向
-            // TODO：这里目前是不能转发的，还需要域名以及nginx，可以先写入本地 host 文件
+        // 如果 redis 中查不到原始短链接，需要查数据库（可能出现缓存问题）
+        // 查询布隆过滤器，确认短链接是否存在 --> 解决缓存穿透问题
+        boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
+        if (!contains) { // 如果不存在
+//            ((HttpServletResponse) response).sendRedirect("/page/notfound");
+            return;
         }
-
-        // 注意，fullShortUrl 的存在和不存在都是有可能被误判的
-        // 短链接不存在被误判是因为 mysql 和 redis 双写的第二阶段失败问题（且缓存没有重建）TODO：解决方法？
-        // 存在被误判是布隆过滤器的问题 TODO：是不是可以考虑在误判率比较高的时候对布隆过滤器进行扩容
-//        if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
-//
-//        }
+        // TODO：检查空对象是否存在
+        String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
+        if (StrUtil.isNotBlank(gotoIsNullShortLink)) { // 如果空对象存在
+//            ((HttpServletResponse) response).sendRedirect("/page/notfound");
+            return;
+        }
+        // 短链接存在（但有可能误判）
+        // 使用分布式锁 --> 解决缓存击穿问题
+        RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl)); // 创建分布式锁对象
+        lock.lock(); // 获取分布式锁
+        try {
+            // TODO：这里为什么要进行双判
+            originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
+            if (StrUtil.isNotBlank(originalLink)) {
+                ((HttpServletResponse) response).sendRedirect(originalLink);
+                return;
+            }
+            // 查 mysql
+            LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                    .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+            ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
+            if (shortLinkGotoDO == null) { // 如果 mysql 中不存在该条数据，说明非法请求打到了 mysql 上 TODO：需要判断过期时间
+                // 在 redis 中存一个对应的空对象
+                stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
+//                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+                return;
+            }
+            LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
+                    .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getEnableStatus, 0);
+            ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+            if (shortLinkDO == null) { // 如果短链接在 link 表中不存在
+                // 同理，缓存一个空对象
+                stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
+//                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+                return;
+            }
+            // 成功获取短链接，放到缓存中
+            stringRedisTemplate.opsForValue().set( // 将短链接放到缓存中并重新设置缓存有效期
+                    String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
+                    shortLinkDO.getOriginUrl(),
+                    LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS
+            );
+            ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());// 重定向
+        } finally {
+            lock.unlock(); // 释放分布式锁
+        }
+        // TODO：复习三大缓存问题和对应的解决方法
     }
 }
