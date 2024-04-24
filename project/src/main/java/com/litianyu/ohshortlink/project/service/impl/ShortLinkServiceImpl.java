@@ -2,6 +2,8 @@ package com.litianyu.ohshortlink.project.service.impl;
 
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.Week;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.StrUtil;
@@ -14,8 +16,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.project.common.convention.exception.ClientException;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
 import com.litianyu.ohshortlink.project.common.enums.VailDateTypeEnum;
+import com.litianyu.ohshortlink.project.dao.entity.LinkAccessStatsDO;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkGotoDO;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkAccessStatsMapper;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkGotoMapper;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkCreateReqDTO;
@@ -67,6 +71,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final ShortLinkGotoMapper shortLinkGotoMapper; // 引入短链接跳转持久层 mapper
+    private final LinkAccessStatsMapper linkAccessStatsMapper;
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
@@ -239,6 +244,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         // 先尝试从 redis 中获取原始长链接
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(originalLink)) { // 如果 redis 中能查到原始短链接
+            shortLinkStats(fullShortUrl, null, request, response); // 成功跳转之前需要做相关统计
             // TODO：这里目前是不能转发的，还需要域名以及nginx，可以先写入本地 host 文件
             ((HttpServletResponse) response).sendRedirect(originalLink); // 直接重定向
             return;
@@ -264,6 +270,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             // TODO：这里为什么要进行双判
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(originalLink)) {
+                shortLinkStats(fullShortUrl, null, request, response); // 成功跳转之前需要做相关统计
                 ((HttpServletResponse) response).sendRedirect(originalLink);
                 return;
             }
@@ -295,9 +302,37 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     shortLinkDO.getOriginUrl(),
                     LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS
             );
+            shortLinkStats(fullShortUrl, shortLinkDO.getGid(), request, response); // 成功跳转之前需要做相关统计
             ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());// 重定向
         } finally {
             lock.unlock(); // 释放分布式锁
+        }
+    }
+
+    private void shortLinkStats(String fullShortUrl, String gid, ServletRequest request, ServletResponse response) {
+        try {
+            if (StrUtil.isBlank(gid)) {
+                LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                        .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+                ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper); // 去 goto 表中查 gid
+                gid = shortLinkGotoDO.getGid();
+            }
+            int hour = DateUtil.hour(new Date(), true); // 获取当前小时
+            Week week = DateUtil.dayOfWeekEnum(new Date());
+            int weekValue = week.getIso8601Value(); // 获取现在是当月的第几周
+            LinkAccessStatsDO linkAccessStatsDO = LinkAccessStatsDO.builder()
+                    .pv(1)
+                    .uv(1) // TODO：这里 uv 的设置是错的，后续会修改
+                    .uip(1)
+                    .hour(hour)
+                    .weekday(weekValue)
+                    .fullShortUrl(fullShortUrl)
+                    .gid(gid) // TODO：gid后续需要删掉
+                    .date(new Date())
+                    .build();
+            linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
+        } catch (Throwable ex) {
+            log.error("短链接访问量统计异常", ex);
         }
     }
 
