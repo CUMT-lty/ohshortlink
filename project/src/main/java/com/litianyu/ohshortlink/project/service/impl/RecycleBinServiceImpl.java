@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
 import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.req.RecycleBinRecoverReqDTO;
+import com.litianyu.ohshortlink.project.dto.req.RecycleBinRemoveReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.RecycleBinSaveReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import com.litianyu.ohshortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -71,5 +72,20 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 .build();
         baseMapper.update(shortLinkDO, updateWrapper);
         stringRedisTemplate.delete(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, requestParam.getFullShortUrl())); // 删除对应的空对象
+    }
+
+    @Override
+    public void removeRecycleBin(RecycleBinRemoveReqDTO requestParam) {
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelTime, 0L)
+                .eq(ShortLinkDO::getDelFlag, 0); // 原删除标志为为0
+        ShortLinkDO delShortLinkDO = ShortLinkDO.builder()
+                .delTime(System.currentTimeMillis())
+                .build();
+        delShortLinkDO.setDelFlag(1); // 设置删除标志位为1
+        baseMapper.update(delShortLinkDO, updateWrapper);
     }
 }

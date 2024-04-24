@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Results;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRecoverReqDTO;
+import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinSaveReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
@@ -77,5 +78,9 @@ public interface ShortLinkRemoteService {
 
     default void recoverRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam) {
         HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/recover", JSON.toJSONString(requestParam));
+    }
+
+    default void removeRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/remove", JSON.toJSONString(requestParam));
     }
 }
