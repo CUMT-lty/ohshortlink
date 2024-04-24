@@ -3,6 +3,7 @@ package com.litianyu.ohshortlink.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Results;
+import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinSaveReqDTO;
 import com.litianyu.ohshortlink.admin.remote.ShortLinkRemoteService;
 import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkRecycleBinPageReqDTO;
@@ -39,5 +40,14 @@ public class RecycleBinController {
     @GetMapping("/api/short-link/admin/v1/recycle-bin/page")
     public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkRecycleBinPageReqDTO requestParam) {
         return recycleBinService.pageRecycleBinShortLink(requestParam);
+    }
+
+    /**
+     * 恢复短链接
+     */
+    @PostMapping("/api/short-link/admin/v1/recycle-bin/recover")
+    public Result<Void> recoverRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam) {
+        shortLinkRemoteService.recoverRecycleBin(requestParam);
+        return Results.success();
     }
 }
