@@ -29,3 +29,6 @@ spring: # 持久层配置文件
 short-link:
   domain:
     default: surl.ink:8001
+  stats: # 短链接统计地区信息访问配置
+    locale:
+      amap-key: dcc44afe5f0e8d0b6b91c5d3d53f7936 # 高德api应用key
