@@ -30,7 +30,7 @@ public class LinkLocaleStatsDO extends BaseDO {
     private String fullShortUrl;
 
     /**
-     * 分组标识 TODO:后续不需要 gid
+     * 分组标识 TODO:后续不需要 gid(数据库中的字段也需要删除)
      */
     private String gid;
 

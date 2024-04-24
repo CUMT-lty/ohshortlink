@@ -10,14 +10,14 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 /**
- * 短链接基础访问监控实体
+ * 操作系统统计访问实体
  */
 @Data
+@TableName("t_link_os_stats")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("t_link_access_stats")
-public class LinkAccessStatsDO extends BaseDO {
+public class LinkOsStatsDO extends BaseDO {
 
     /**
      * id
@@ -30,7 +30,7 @@ public class LinkAccessStatsDO extends BaseDO {
     private String fullShortUrl;
 
     /**
-     * 分组标识 TODO：后续这个字段需要删除(数据库中的字段也需要删除)
+     * 分组标识 TODO：后续不需要这个字段(数据库中的字段也需要删除)
      */
     private String gid;
 
@@ -42,25 +42,10 @@ public class LinkAccessStatsDO extends BaseDO {
     /**
      * 访问量
      */
-    private Integer pv;
+    private Integer cnt;
 
     /**
-     * 独立访客数
+     * 操作系统
      */
-    private Integer uv;
-
-    /**
-     * 独立ip数
-     */
-    private Integer uip;
-
-    /**
-     * 小时
-     */
-    private Integer hour;
-
-    /**
-     * 星期
-     */
-    private Integer weekday;
+    private String os;
 }

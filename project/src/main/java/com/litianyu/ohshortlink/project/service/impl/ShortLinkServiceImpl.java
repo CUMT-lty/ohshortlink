@@ -20,14 +20,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.project.common.convention.exception.ClientException;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
 import com.litianyu.ohshortlink.project.common.enums.VailDateTypeEnum;
-import com.litianyu.ohshortlink.project.dao.entity.LinkAccessStatsDO;
-import com.litianyu.ohshortlink.project.dao.entity.LinkLocaleStatsDO;
-import com.litianyu.ohshortlink.project.dao.entity.ShortLinkDO;
-import com.litianyu.ohshortlink.project.dao.entity.ShortLinkGotoDO;
-import com.litianyu.ohshortlink.project.dao.mapper.LinkAccessStatsMapper;
-import com.litianyu.ohshortlink.project.dao.mapper.LinkLocaleStatsMapper;
-import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkGotoMapper;
-import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
+import com.litianyu.ohshortlink.project.dao.entity.*;
+import com.litianyu.ohshortlink.project.dao.mapper.*;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.litianyu.ohshortlink.project.dto.req.ShortLinkUpdateReqDTO;
@@ -80,6 +74,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final ShortLinkGotoMapper shortLinkGotoMapper; // 引入短链接跳转持久层 mapper
     private final LinkAccessStatsMapper linkAccessStatsMapper;
     private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+    private final LinkOsStatsMapper linkOsStatsMapper;
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
@@ -368,6 +363,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .date(new Date())
                     .build();
             linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
+            // 地区访问监控
             Map<String, Object> localeParamMap = new HashMap<>();
             localeParamMap.put("key", statsLocaleAmapKey); // 高德api的应用key
             localeParamMap.put("ip", remoteAddr);
@@ -388,6 +384,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .date(new Date())
                         .build();
                 linkLocaleStatsMapper.shortLinkLocaleState(linkLocaleStatsDO);
+                // 操作系统访问监控
+                LinkOsStatsDO linkOsStatsDO = LinkOsStatsDO.builder()
+                        .os(LinkUtil.getOs(((HttpServletRequest) request))) // 获取操作系统
+                        .cnt(1)
+                        .gid(gid)
+                        .fullShortUrl(fullShortUrl)
+                        .date(new Date())
+                        .build();
+                linkOsStatsMapper.shortLinkOsState(linkOsStatsDO);
             }
         } catch (Throwable ex) {
             log.error("短链接访问量统计异常", ex);
