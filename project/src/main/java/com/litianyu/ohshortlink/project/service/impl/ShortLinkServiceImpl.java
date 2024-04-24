@@ -311,10 +311,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     }
 
     private void shortLinkStats(String fullShortUrl, String gid, ServletRequest request, ServletResponse response) {
-        AtomicBoolean uvFirstFlag = new AtomicBoolean();
+        AtomicBoolean uvFirstFlag = new AtomicBoolean(); // 该用户是否是第一次访问
         Cookie[] cookies = ((HttpServletRequest) request).getCookies();
         try {
-            Runnable addResponseCookieTask = () -> {
+            Runnable addResponseCookieTask = () -> { // TODO：这里为什么要这么写
                 String uv = UUID.fastUUID().toString();
                 Cookie uvCookie = new Cookie("uv", uv); // uuid 作为 cookie，标识用户的身份
                 uvCookie.setMaxAge(60 * 60 * 24 * 30); // 有效时间为1个月
@@ -329,12 +329,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .findFirst()
                         .map(Cookie::getValue)
                         .ifPresentOrElse(each -> {
-                            Long added = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, each); // 存入 redis
-                            uvFirstFlag.set(added != null && added > 0L); // 设置是否是第一次访问
+                            Long uvAdded = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, each); // 存入 redis
+                            uvFirstFlag.set(uvAdded != null && uvAdded > 0L); // 设置是否是第一次访问
                         }, addResponseCookieTask);
             } else { // 如果没有设置cookie，说明是用户第一次访问
                 addResponseCookieTask.run();
             }
+            String remoteAddr = LinkUtil.getActualIp(((HttpServletRequest) request)); // 获取 ip
+            Long uipAdded = stringRedisTemplate.opsForSet().add("short-link:stats:uip:" + fullShortUrl, remoteAddr);
+            boolean uipFirstFlag = uipAdded != null && uipAdded > 0L; // 该ip是否是第一次访问
             if (StrUtil.isBlank(gid)) {
                 LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
                         .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
@@ -347,7 +350,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             LinkAccessStatsDO linkAccessStatsDO = LinkAccessStatsDO.builder()
                     .pv(1)
                     .uv(uvFirstFlag.get() ? 1 : 0)
-                    .uip(1)
+                    .uip(uipFirstFlag ? 1 : 0)
                     .hour(hour)
                     .weekday(weekValue)
                     .fullShortUrl(fullShortUrl)
