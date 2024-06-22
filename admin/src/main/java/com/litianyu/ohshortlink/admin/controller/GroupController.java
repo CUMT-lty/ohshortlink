@@ -15,6 +15,9 @@ import java.util.List;
 /**
  * 短链接分组控制层
  */
+
+// TODO：分组操作这里后续需要在网关部分验证登陆状态
+// TODO：考虑是否需要做短链接鉴权功能（谁有权使用这个短链接）
 @RestController
 @RequiredArgsConstructor
 public class GroupController {

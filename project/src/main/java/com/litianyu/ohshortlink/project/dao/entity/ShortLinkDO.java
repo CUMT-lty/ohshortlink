@@ -20,7 +20,6 @@ import java.util.Date;
 @AllArgsConstructor
 public class ShortLinkDO extends BaseDO {
 
-
     /**
      * id
      */

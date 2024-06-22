@@ -16,7 +16,7 @@ public class ShortLinkPageReqDTO extends Page<ShortLinkDO> {
     private String gid;
 
     /**
-     * 排序标识
+     * 排序标识（按照哪个字段来排序）
      */
     private String orderTag;
 }
