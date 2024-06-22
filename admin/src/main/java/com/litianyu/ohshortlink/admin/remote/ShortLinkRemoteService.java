@@ -12,10 +12,7 @@ import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinSaveReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.req.*;
-import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkStatsRespDTO;
+import com.litianyu.ohshortlink.admin.remote.dto.resp.*;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.HashMap;
@@ -85,6 +82,15 @@ public interface ShortLinkRemoteService {
 
     default Result<ShortLinkStatsRespDTO> oneShortLinkStats(ShortLinkStatsReqDTO shortLinkStatsReqDTO) {
         String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/stats", BeanUtil.beanToMap(shortLinkStatsReqDTO));
+        return JSON.parseObject(resultBodyStr, new TypeReference<>() {
+        });
+    }
+
+    default Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        Map<String, Object> stringObjectMap = BeanUtil.beanToMap(requestParam, false, true);
+        stringObjectMap.remove("orders");
+        stringObjectMap.remove("records");
+        String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/stats/access-record", stringObjectMap);
         return JSON.parseObject(resultBodyStr, new TypeReference<>() {
         });
     }

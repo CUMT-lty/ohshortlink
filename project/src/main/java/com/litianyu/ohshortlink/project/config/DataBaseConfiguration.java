@@ -19,7 +19,7 @@ public class DataBaseConfiguration {
      * 分页插件
      */
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean // 如果容器中没有这个 bean 再注入
     public MybatisPlusInterceptor mybatisPlusInterceptor() { // mybatis plus 分页插件
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
