@@ -428,7 +428,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 LinkNetworkStatsDO linkNetworkStatsDO = LinkNetworkStatsDO.builder()
                         .network(network)
                         .cnt(1)
-                        .gid(gid)
+                        .gid(gid) // TODO：gid 后续需要删
                         .fullShortUrl(fullShortUrl)
                         .date(new Date())
                         .build();
