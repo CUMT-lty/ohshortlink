@@ -32,3 +32,8 @@ short-link:
   stats: # 短链接统计地区信息访问配置
     locale:
       amap-key: dcc44afe5f0e8d0b6b91c5d3d53f7936 # 高德api应用key
+
+mybatis-plus: # mybatis-plus 配置
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/*.xml

@@ -25,8 +25,10 @@ rules:
         actualDataNodes: ds_0.t_link_stats_today_${0..15}
         tableStrategy:
           standard:
-            shardingColumn: gid
+            shardingColumn: gid # 分片键必须和 t_link 表相同，因为下面有关于联表绑定的配置
             shardingAlgorithmName: link_stats_today_hash_mod
+    bindingTables: # 绑定表限制（防止联表查询返回笛卡尔积结果）（有一处 t_link 和 t_link_stats_today 表的 join 查询）TODO：后续可以研究一下，因为 sharding 这个奇怪的操作，是不是分库分表的表不应该去做联表查询操作
+      - t_link, t_link_stats_today # 有 join 操作的表需要使用这个配置绑定一下（关键是两个表的分片键需要一致）
     shardingAlgorithms:
       link_table_hash_mod:
         type: HASH_MOD
