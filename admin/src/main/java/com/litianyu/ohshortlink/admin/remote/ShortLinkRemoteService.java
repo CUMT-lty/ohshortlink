@@ -1,6 +1,7 @@
 package com.litianyu.ohshortlink.admin.remote;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
@@ -10,20 +11,18 @@ import com.litianyu.ohshortlink.admin.common.conversion.result.Results;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinSaveReqDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkRecycleBinPageReqDTO;
-import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
+import com.litianyu.ohshortlink.admin.remote.dto.req.*;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkStatsRespDTO;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// TODO：后续这个文件要删除的
+// TODO：后续这个文件要删除的（整个 rpc 调用要使用 spring cloud 来重构）
 
 /**
  * 短链接中台远程调用服务
@@ -82,5 +81,11 @@ public interface ShortLinkRemoteService {
 
     default void removeRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam) {
         HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/remove", JSON.toJSONString(requestParam));
+    }
+
+    default Result<ShortLinkStatsRespDTO> oneShortLinkStats(ShortLinkStatsReqDTO shortLinkStatsReqDTO) {
+        String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/stats", BeanUtil.beanToMap(shortLinkStatsReqDTO));
+        return JSON.parseObject(resultBodyStr, new TypeReference<>() {
+        });
     }
 }

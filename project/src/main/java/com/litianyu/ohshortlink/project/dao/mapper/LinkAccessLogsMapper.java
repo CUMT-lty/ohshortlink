@@ -31,7 +31,7 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> { // 
             "ORDER BY " +
             "    count DESC " +
             "LIMIT 5;")
-    List<HashMap<String, Object>> listTopIpByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
+    List<HashMap<String, Object>> listTopIpByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam); // @Param("param") 注解的作用：给参数命名，可以在 sql 中通过 #{} 的方式使用传来的参数
 
     /**
      * 根据短链接获取指定日期内新旧访客数据

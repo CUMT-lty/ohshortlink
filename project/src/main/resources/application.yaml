@@ -1,5 +1,5 @@
 server:
-#  port: 8000 # TODO: 这个后续应该是网关的端口
+#  port: 8000 # TODO: 这个后续应该是网关的端口（现在是 admin 模块配的这个端口，admin 模块使用 HTTP 来调用 project 模块）
   port: 8001
 
 spring: # 持久层配置文件
