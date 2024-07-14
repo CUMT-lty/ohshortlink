@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.admin.common.conversion.exception.ClientException;
+import com.litianyu.ohshortlink.admin.common.conversion.exception.ServiceException;
+import com.litianyu.ohshortlink.admin.common.enums.UserErrorCodeEnum;
 import com.litianyu.ohshortlink.admin.dao.entity.UserDO;
 import com.litianyu.ohshortlink.admin.dao.mapper.UserMapper;
 import com.litianyu.ohshortlink.admin.dto.req.UserLoginReqDTO;
@@ -53,6 +55,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class) // 规定好要查询的实体对象
                 .eq(UserDO::getUsername, username);
         UserDO userDO = baseMapper.selectOne(queryWrapper); // ServiceImpl 中有 baseMapper
+        if (userDO == null) {
+            throw new ServiceException(UserErrorCodeEnum.USER_NULL);
+        }
         UserRespDTO result = new UserRespDTO();
         BeanUtils.copyProperties(userDO, result); // springboot 提供的方法，将 dao 转为 dto
         return result;
