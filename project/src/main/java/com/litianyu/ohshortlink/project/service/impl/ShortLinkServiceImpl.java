@@ -250,7 +250,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         } else { // 如果给短链接切换分组
             RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, requestParam.getFullShortUrl()));
             RLock rLock = readWriteLock.writeLock();
-            if (!rLock.tryLock()) {
+            if (!rLock.tryLock()) { // 如果获取不到读锁，说明短链接正在被访问
                 throw new ServiceException("短链接正在被访问，请稍后再试...");
             }
             try {
@@ -531,7 +531,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         fullShortUrl = Optional.ofNullable(fullShortUrl).orElse(statsRecord.getFullShortUrl());
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl));
         RLock rLock = readWriteLock.readLock();
-        if (!rLock.tryLock()) {
+        if (!rLock.tryLock()) { // 如果获取不到写锁，统计操作仍然需要进行（因为写操作耗时很长，不能让一个写操作阻塞大量的读操作），把任务放入延迟队列
             delayShortLinkStatsProducer.send(statsRecord);
             return;
         }

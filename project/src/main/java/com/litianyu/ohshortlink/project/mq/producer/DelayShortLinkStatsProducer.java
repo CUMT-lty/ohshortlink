@@ -28,6 +28,6 @@ public class DelayShortLinkStatsProducer {
     public void send(ShortLinkStatsRecordDTO statsRecord) {
         RBlockingDeque<ShortLinkStatsRecordDTO> blockingDeque = redissonClient.getBlockingDeque(DELAY_QUEUE_STATS_KEY);
         RDelayedQueue<ShortLinkStatsRecordDTO> delayedQueue = redissonClient.getDelayedQueue(blockingDeque);
-        delayedQueue.offer(statsRecord, 5, TimeUnit.SECONDS);
+        delayedQueue.offer(statsRecord, 5, TimeUnit.SECONDS); // 消费的延迟时间是 5s，理论上延迟时间设置的稍大于写操作的耗时就可以
     }
 }

@@ -24,6 +24,7 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
     private final RedissonClient redissonClient;
     private final ShortLinkService shortLinkService;
 
+    // 在 spring 初始化时就会初始化出这个任务
     public void onMessage() {
         Executors.newSingleThreadExecutor( // 线程池，1 核心线程、1 最大线程数
                         runnable -> {
@@ -43,7 +44,7 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
                                 shortLinkService.shortLinkStats(null, null, statsRecord);
                                 continue;
                             }
-                            LockSupport.parkUntil(500);
+                            LockSupport.parkUntil(500); // 不让这个线程常驻，每处理一个任务就让出 CPU 500ms
                         } catch (Throwable ignored) {
                         }
                     }
