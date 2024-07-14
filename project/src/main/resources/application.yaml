@@ -32,6 +32,15 @@ short-link:
   stats: # 短链接统计地区信息访问配置
     locale:
       amap-key: dcc44afe5f0e8d0b6b91c5d3d53f7936 # 高德api应用key
+  goto-domain: # 短链接白名单配置 TODO：风控这部分，看看后续能不能再加一个黑名单功能
+    white-list:
+      enable: true
+      names: '拿个offer,知乎,掘金,博客园'
+      details:
+        - nageoffer.com
+        - zhihu.com
+        - juejin.cn
+        - cnblogs.com
 
 mybatis-plus: # mybatis-plus 配置
   configuration:

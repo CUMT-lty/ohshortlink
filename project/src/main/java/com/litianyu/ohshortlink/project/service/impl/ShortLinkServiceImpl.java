@@ -21,6 +21,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.litianyu.ohshortlink.project.common.convention.exception.ClientException;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
 import com.litianyu.ohshortlink.project.common.enums.VailDateTypeEnum;
+import com.litianyu.ohshortlink.project.config.GotoDomainWhiteListConfiguration;
 import com.litianyu.ohshortlink.project.dao.entity.*;
 import com.litianyu.ohshortlink.project.dao.mapper.*;
 import com.litianyu.ohshortlink.project.dto.biz.ShortLinkStatsRecordDTO;
@@ -95,6 +96,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     // other bean
     private final DelayShortLinkStatsProducer delayShortLinkStatsProducer;
 
+    // config
+    private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
@@ -105,6 +108,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Transactional(rollbackFor = Exception.class)
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
+        verificationWhitelist(requestParam.getOriginUrl());
         // 短链接写在4个地方：link表、goto表、redis、布隆过滤器
         String shortLinkSuffix = generateSuffix(requestParam); // 拿到 6 位短链接后缀
         String fullShortUrl = StrBuilder.create(createShortLinkDefaultDomain) // 注意，是(域名+6位短链接)唯一标识一条短链接，而不仅仅是后缀（即允许后缀重复但域名不同的短链接）
@@ -217,7 +221,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Transactional(rollbackFor = Exception.class) // 事务管理，因为这个方法中涉及的数据库修改操作不止一个，需要有事务回滚措施
     @Override
     public void updateShortLink(ShortLinkUpdateReqDTO requestParam) { // TODO：这个逻辑后续需要优化
-//        verificationWhitelist(requestParam.getOriginUrl());
+        verificationWhitelist(requestParam.getOriginUrl()); // 白名单风控
         LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
                 .eq(ShortLinkDO::getGid, requestParam.getOriginGid())
                 .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
@@ -655,5 +659,20 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             }
         }
         return null;
+    }
+
+    private void verificationWhitelist(String originUrl) {
+        Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
+        if (enable == null || !enable) {
+            return;
+        }
+        String domain = LinkUtil.extractDomain(originUrl);
+        if (StrUtil.isBlank(domain)) {
+            throw new ClientException("跳转链接填写错误");
+        }
+        List<String> details = gotoDomainWhiteListConfiguration.getDetails();
+        if (!details.contains(domain)) {
+            throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
+        }
     }
 }
