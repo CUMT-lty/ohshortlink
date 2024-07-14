@@ -25,12 +25,12 @@ public class UserTransmitFilter implements Filter {
             String userId = httpServletRequest.getHeader("userId");
             String realName = httpServletRequest.getHeader("realName");
             UserInfoDTO userInfoDTO = new UserInfoDTO(userId, username, realName);
-            UserContext.setUser(userInfoDTO);
+            UserContext.setUser(userInfoDTO); // TODO：调试一下 filter 的顺序，怎么保证这个 filter 先执行
         }
         try {
             filterChain.doFilter(servletRequest, servletResponse);
         } finally {
-            UserContext.removeUser(); // TODO：将保存的用户信息从当前线程上下文中 remove 掉，防止内存泄漏（这里没太明白）
+            UserContext.removeUser(); // 放行后清空线程上下文信息
         }
     }
 }

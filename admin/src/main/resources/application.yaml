@@ -24,4 +24,8 @@ spring: # 持久层配置文件
 
 short-link:
   group:
-    max-num: 20
+    max-num: 20 # 单个用户能够创建的最大分组数
+  flow-limit: # 限流配置
+    enable: true
+    time-window: 1
+    max-access-count: 20
