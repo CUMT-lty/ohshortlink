@@ -112,8 +112,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO == null) { // 如果(用户名,密码)不存在
             throw new ClientException("用户不存在");
         }
-        // token 放入 redis，后续能够快速查询用户是否登陆，并设置有效期，限定用户多久后需要重新登录
-//        stringRedisTemplate.opsForValue().set(uuid, JSON.toJSONString(userDO), 30L, TimeUnit.MINUTES); // 这么写会有已登陆的用户重复登陆的问题
         /**
          * 以 Hash 结构去存储用户的登陆状态，
          * Key：login_用户名（注意这里是使用用户名去作为 key 的，因为 username 是唯一，这样可以防止用户重复登陆）
@@ -123,8 +121,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
          */
         Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + requestParam.getUsername());
         if (CollUtil.isNotEmpty(hasLoginMap)) { // 如果用户已经登陆
-            stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES); // 跟新过期时间
-            String token = hasLoginMap.keySet().stream() // 拿到原 token
+            stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES); // 更新过期时间
+            String token = hasLoginMap.keySet().stream() // 如果已登陆返回原 token
                     .findFirst()
                     .map(Object::toString)
                     .orElseThrow(() -> new ClientException("用户登录错误"));
