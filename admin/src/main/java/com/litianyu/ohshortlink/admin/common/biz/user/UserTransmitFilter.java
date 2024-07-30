@@ -25,7 +25,7 @@ public class UserTransmitFilter implements Filter {
             String userId = httpServletRequest.getHeader("userId");
             String realName = httpServletRequest.getHeader("realName");
             UserInfoDTO userInfoDTO = new UserInfoDTO(userId, username, realName);
-            UserContext.setUser(userInfoDTO); // TODO：调试一下 filter 的顺序，怎么保证这个 filter 先执行
+            UserContext.setUser(userInfoDTO);
         }
         try {
             filterChain.doFilter(servletRequest, servletResponse);
