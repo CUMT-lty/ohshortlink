@@ -3,6 +3,8 @@ server:
   port: 8001
 
 spring: # 持久层配置文件
+  application: # 服务发现配置，这个不要忘记加，注册一个服务名称
+    name: short-link-project
   datasource: # ShardingSphere 配置
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver # ShardingSphere 对 Driver 自定义，实现分库分表等隐藏逻辑
     url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yaml # ShardingSphere 配置文件路径（环境默认是 dev，这个参数可以通过 java -jar -database.env=dev 的方式去传入）
@@ -25,6 +27,10 @@ spring: # 持久层配置文件
     view:
       prefix: /templates/
       suffix: .html
+  cloud: # 服务发现配置
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
 
 short-link:
   domain:
@@ -41,6 +47,7 @@ short-link:
         - zhihu.com
         - juejin.cn
         - cnblogs.com
+        - baidu.com
 
 mybatis-plus: # mybatis-plus 配置
   configuration:

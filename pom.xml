@@ -72,7 +72,7 @@
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-alibaba-dependencies</artifactId>
                 <version>${spring-cloud-alibaba.version}</version>
-                <type>pom</type>
+                <type>pom</type> <!-- 版本规约，这样一些依赖就不需要再填版本号了 -->
                 <scope>import</scope>
             </dependency>
 

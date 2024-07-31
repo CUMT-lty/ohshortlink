@@ -2,14 +2,14 @@ package com.litianyu.ohshortlink.admin.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.litianyu.ohshortlink.admin.common.biz.user.UserContext;
 import com.litianyu.ohshortlink.admin.common.conversion.exception.ServiceException;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
 import com.litianyu.ohshortlink.admin.dao.entity.GroupDO;
 import com.litianyu.ohshortlink.admin.dao.mapper.GroupMapper;
-import com.litianyu.ohshortlink.admin.remote.ShortLinkRemoteService;
+import com.litianyu.ohshortlink.admin.remote.ShortLinkActualRemoteService;
 import com.litianyu.ohshortlink.admin.remote.dto.req.ShortLinkRecycleBinPageReqDTO;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import com.litianyu.ohshortlink.admin.service.RecycleBinService;
@@ -24,11 +24,13 @@ import java.util.List;
 @Service(value = "recycleBinServiceImplByAdmin")
 @RequiredArgsConstructor
 public class RecycleBinServiceImpl implements RecycleBinService {
-    private final ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {};
+
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;
+
     private final GroupMapper groupMapper;
 
     @Override
-    public Result<IPage<ShortLinkPageRespDTO>> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam) {
+    public Result<Page<ShortLinkPageRespDTO>> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam) {
         // 查询当前用户下的所有分组
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getUsername, UserContext.getUsername())
@@ -38,6 +40,6 @@ public class RecycleBinServiceImpl implements RecycleBinService {
             throw new ServiceException("用户无分组信息");
         }
         requestParam.setGidList(groupDOList.stream().map(GroupDO::getGid).toList());
-        return shortLinkRemoteService.pageRecycleBinShortLink(requestParam);
+        return shortLinkActualRemoteService.pageRecycleBinShortLink(requestParam.getGidList(), requestParam.getCurrent(), requestParam.getSize());
     }
 }

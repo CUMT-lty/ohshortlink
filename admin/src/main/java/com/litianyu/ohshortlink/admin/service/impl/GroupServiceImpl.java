@@ -14,7 +14,7 @@ import com.litianyu.ohshortlink.admin.dao.mapper.GroupMapper;
 import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.ShortLinkGroupRespDTO;
-import com.litianyu.ohshortlink.admin.remote.ShortLinkRemoteService;
+import com.litianyu.ohshortlink.admin.remote.ShortLinkActualRemoteService;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.admin.service.GroupService;
 import com.litianyu.ohshortlink.admin.toolkit.RandomGenerator;
@@ -39,7 +39,7 @@ import static com.litianyu.ohshortlink.admin.common.constant.RedisCacheConstant.
 @RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
-    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {}; // TODO: 这个后期用 spring cloud 重构之后需要删掉
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;
 
     private final RedissonClient redissonClient;
 
@@ -101,7 +101,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .eq(GroupDO::getDelFlag, 0)
                 .orderByDesc(GroupDO::getSortOrder, GroupDO::getUpdateTime);
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
-        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkRemoteService
+        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkActualRemoteService
                 .listGroupShortLinkCount(groupDOList.stream().map(GroupDO::getGid).toList());
         List<ShortLinkGroupRespDTO> shortLinkGroupRespDTOList = BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);// dao 转 dto
         shortLinkGroupRespDTOList.forEach(each -> {
@@ -147,5 +147,4 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
             baseMapper.update(groupDO, updateWrapper);
         });
     }
-
 }
