@@ -20,6 +20,7 @@ import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.
 /**
  * 延迟记录短链接统计组件
  */
+@Deprecated
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -71,6 +72,6 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception { // bean 初始化后会执行该方法
-        onMessage();
+//        onMessage();
     }
 }
