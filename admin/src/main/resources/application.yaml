@@ -1,6 +1,5 @@
 server:
-  port: 8000 # TODO: 这个后续应该是网关的端口
-#  port: 8002
+  port: 8002 # 网关服务端口 8000
 
 spring: # 持久层配置文件
   application: # 服务发现配置，不要忘记，注册服务名称
