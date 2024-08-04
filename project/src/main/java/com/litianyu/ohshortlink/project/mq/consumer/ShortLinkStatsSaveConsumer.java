@@ -90,10 +90,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
         fullShortUrl = Optional.ofNullable(fullShortUrl).orElse(statsRecord.getFullShortUrl());
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl)); // 获取读写锁
         RLock rLock = readWriteLock.readLock();
-        if (!rLock.tryLock()) {  // 如果获取不到写锁，统计操作仍然需要进行（写操作耗时很长，不能让一个写操作阻塞大量的读操作），把任务放入延迟队列
-            delayShortLinkStatsProducer.send(statsRecord);
-            return;
-        }
+        rLock.tryLock(); // 如果获取不到写锁，统计操作仍然需要进行（写操作耗时很长，不能让一个写操作阻塞大量的读操作），把任务放入延迟队列
         try {
             if (StrUtil.isBlank(gid)) {
                 LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
