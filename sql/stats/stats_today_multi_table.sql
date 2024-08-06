@@ -1,7 +1,4 @@
-# TODO: 后续这个 sql 要再执行一遍，把表结构调整过来
-
-CREATE TABLE `t_link_stats_today_0`
-(
+CREATE TABLE `t_link_stats_today_0` (
     `id`             bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `full_short_url` varchar(128) DEFAULT NULL COMMENT '短链接',
     `date`           date         DEFAULT NULL COMMENT '日期',

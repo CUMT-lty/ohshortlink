@@ -1,5 +1,4 @@
-CREATE TABLE `t_link_device_stats`
-(
+CREATE TABLE `t_link_device_stats` (
     `id`             bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `full_short_url` varchar(128) DEFAULT NULL COMMENT '完整短链接',
     `date`           date         DEFAULT NULL COMMENT '日期',

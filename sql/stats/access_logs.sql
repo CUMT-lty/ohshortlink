@@ -1,5 +1,4 @@
-CREATE TABLE `t_link_access_logs`
-(
+CREATE TABLE `t_link_access_logs` (
     `id`             bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `full_short_url` varchar(128) DEFAULT NULL COMMENT '完整短链接',
     `user`           varchar(64)  DEFAULT NULL COMMENT '用户信息',

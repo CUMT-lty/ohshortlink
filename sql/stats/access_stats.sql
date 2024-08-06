@@ -1,5 +1,4 @@
-CREATE TABLE `t_link_access_stats`
-(
+CREATE TABLE `t_link_access_stats` (
     `id`             bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `full_short_url` varchar(128) DEFAULT NULL COMMENT '完整短链接',  -- TODO:哪一个字段作为后续分表的分片键
     `date`           date         DEFAULT NULL COMMENT '日期',

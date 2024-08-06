@@ -1,5 +1,4 @@
-CREATE TABLE `t_link`
-(
+CREATE TABLE `t_link` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',

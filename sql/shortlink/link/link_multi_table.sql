@@ -1,5 +1,4 @@
-CREATE TABLE `t_link_0`
-(
+CREATE TABLE `t_link_0` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -24,8 +23,7 @@ CREATE TABLE `t_link_0`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_1`
-(
+CREATE TABLE `t_link_1` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -50,8 +48,7 @@ CREATE TABLE `t_link_1`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_2`
-(
+CREATE TABLE `t_link_2` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -76,8 +73,7 @@ CREATE TABLE `t_link_2`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_3`
-(
+CREATE TABLE `t_link_3` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -102,8 +98,7 @@ CREATE TABLE `t_link_3`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_4`
-(
+CREATE TABLE `t_link_4` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -128,8 +123,7 @@ CREATE TABLE `t_link_4`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_5`
-(
+CREATE TABLE `t_link_5` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -154,8 +148,7 @@ CREATE TABLE `t_link_5`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_6`
-(
+CREATE TABLE `t_link_6` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -180,8 +173,7 @@ CREATE TABLE `t_link_6`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_7`
-(
+CREATE TABLE `t_link_7` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -206,8 +198,7 @@ CREATE TABLE `t_link_7`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_8`
-(
+CREATE TABLE `t_link_8` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -232,8 +223,7 @@ CREATE TABLE `t_link_8`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_9`
-(
+CREATE TABLE `t_link_9` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -258,8 +248,7 @@ CREATE TABLE `t_link_9`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_10`
-(
+CREATE TABLE `t_link_10` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -284,8 +273,7 @@ CREATE TABLE `t_link_10`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_11`
-(
+CREATE TABLE `t_link_11` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -310,8 +298,7 @@ CREATE TABLE `t_link_11`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_12`
-(
+CREATE TABLE `t_link_12` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -336,8 +323,7 @@ CREATE TABLE `t_link_12`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_13`
-(
+CREATE TABLE `t_link_13` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -362,8 +348,7 @@ CREATE TABLE `t_link_13`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_14`
-(
+CREATE TABLE `t_link_14` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
@@ -388,8 +373,7 @@ CREATE TABLE `t_link_14`
     UNIQUE KEY `idx_unique_full-short-url` (`full_short_url`,`del_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `t_link_15`
-(
+CREATE TABLE `t_link_15` (
     `id`              bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `domain`          varchar(128)                                   DEFAULT NULL COMMENT '域名',
     `short_uri`       varchar(8) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '短链接',
