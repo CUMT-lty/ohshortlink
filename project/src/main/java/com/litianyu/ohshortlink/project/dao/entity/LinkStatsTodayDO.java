@@ -25,11 +25,6 @@ public class LinkStatsTodayDO extends BaseDO {
     private Long id;
 
     /**
-     * 分组标识 TODO：后续这个字段要删掉，数据库中这个字段也要删
-     */
-    private String gid;
-
-    /**
      * 短链接
      */
     private String fullShortUrl;

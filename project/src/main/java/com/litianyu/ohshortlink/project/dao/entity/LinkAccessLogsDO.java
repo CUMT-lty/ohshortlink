@@ -28,11 +28,6 @@ public class LinkAccessLogsDO extends BaseDO {
     private String fullShortUrl;
 
     /**
-     * 分组标识 TODO:后续这个字段需要删除（数据库也需要改动）
-     */
-    private String gid;
-
-    /**
      * 用户信息（注意这个字段）
      */
     private String user;

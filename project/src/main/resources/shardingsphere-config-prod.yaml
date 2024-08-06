@@ -1,1 +1,40 @@
-# TODO：后续需要补充一下配置
+# 目前和 dev 配置保持一致
+dataSources:
+  ds_0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://127.0.0.1:3306/ohshortlink?useUnicode=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 88888888
+
+rules:
+  - !SHARDING
+    tables:
+      t_link: # 短链接表
+        actualDataNodes: ds_0.t_link_${0..15}
+        tableStrategy:
+          standard:
+            shardingColumn: gid # 分片键的选择
+            shardingAlgorithmName: link_table_hash_mod
+      t_link_goto: # 短链接跳转表
+        actualDataNodes: ds_0.t_link_goto_${0..15}
+        tableStrategy:
+          standard:
+            shardingColumn: full_short_url
+            shardingAlgorithmName: link_goto_table_hash_mod
+    shardingAlgorithms:
+      link_table_hash_mod:
+        type: HASH_MOD
+        props:
+          sharding-count: 16
+      link_goto_table_hash_mod:
+        type: HASH_MOD
+        props:
+          sharding-count: 16
+      link_stats_today_hash_mod:
+        type: HASH_MOD
+        props:
+          sharding-count: 16
+
+props:
+  sql-show: true

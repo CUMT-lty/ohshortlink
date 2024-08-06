@@ -30,11 +30,6 @@ public class LinkNetworkStatsDO extends BaseDO {
     private String fullShortUrl;
 
     /**
-     * 分组标识 TODO:后续把这个字段删掉（数据库字段也删）
-     */
-    private String gid;
-
-    /**
      * 日期
      */
     private Date date;
