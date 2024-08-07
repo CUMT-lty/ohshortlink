@@ -9,7 +9,7 @@ local accessKey = "short-link:user-flow-risk-control:" .. username -- 拼接字�
 local currentAccessCount = redis.call("INCR", accessKey)
 
 -- 设置键的过期时间
-if currentAccessCount == 1 then -- 如果是第一次访问
+if currentAccessCount == 1 then -- 如果是第一次访问（防止后台管理限流无限刷新）
     redis.call("EXPIRE", accessKey, timeWindow) -- 设置过期时间
 end
 
