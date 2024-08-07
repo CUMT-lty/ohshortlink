@@ -412,8 +412,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         // 先尝试从 redis 中获取原始长链接
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(originalLink)) { // 如果 redis 中能查到原始短链接
-            ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
-            shortLinkStats(fullShortUrl, null, statsRecord); // 成功跳转之前需要做相关统计
+            shortLinkStats(buildLinkStatsRecordAndSetUser(fullShortUrl, request, response));
             // TODO：这里目前是不能转发的，还需要域名以及nginx，可以先写入本地 host 文件
             ((HttpServletResponse) response).sendRedirect(originalLink); // 直接重定向
             return;
@@ -439,8 +438,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             // TODO：这里为什么要进行双判
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(originalLink)) {
-                ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
-                shortLinkStats(fullShortUrl, null, statsRecord); // 成功跳转之前需要做相关统计
+                shortLinkStats(buildLinkStatsRecordAndSetUser(fullShortUrl, request, response)); // 跳转之前先统计
                 ((HttpServletResponse) response).sendRedirect(originalLink);
                 return;
             }
@@ -472,8 +470,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     shortLinkDO.getOriginUrl(),
                     LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS
             );
-            ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
-            shortLinkStats(fullShortUrl, shortLinkDO.getGid(), statsRecord); // 成功跳转之前需要做相关统计
+            shortLinkStats(buildLinkStatsRecordAndSetUser(fullShortUrl, request, response)); // 跳转之前先统计
             ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());// 重定向
         } finally {
             lock.unlock(); // 释放分布式锁
@@ -528,10 +525,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     }
 
     @Override
-    public void shortLinkStats(String fullShortUrl, String gid, ShortLinkStatsRecordDTO statsRecord) {
+    public void shortLinkStats(ShortLinkStatsRecordDTO statsRecord) {
         Map<String, String> producerMap = new HashMap<>();
-        producerMap.put("fullShortUrl", fullShortUrl);
-        producerMap.put("gid", gid);
         producerMap.put("statsRecord", JSON.toJSONString(statsRecord));
         shortLinkStatsSaveProducer.send(producerMap);
     }

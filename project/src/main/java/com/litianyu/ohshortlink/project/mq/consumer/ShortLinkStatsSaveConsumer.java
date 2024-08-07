@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.LOCK_GID_UPDATE_KEY;
 import static com.litianyu.ohshortlink.project.common.constant.ShortLinkConstant.AMAP_REMOTE_URL;
@@ -71,12 +70,8 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
             throw new ServiceException("消息未完成流程，需要消息队列重试"); // 被消费但未完成则需要重试
         }
         try {
-            String fullShortUrl = producerMap.get("fullShortUrl");
-            if (StrUtil.isNotBlank(fullShortUrl)) { // 防御式编程，防止误操作消息队列
-                String gid = producerMap.get("gid");
-                ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
-                actualSaveShortLinkStats(fullShortUrl, gid, statsRecord); // 短链接访问统计
-            }
+            ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
+            actualSaveShortLinkStats(statsRecord); // 短链接访问统计
         } catch (Throwable ex) {
             log.error("记录短链接监控消费异常", ex);
             try {
@@ -90,18 +85,16 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
         log.info("[消息消费统计监控] 消息消费结果：成功，消息keys：{}", keys);
     }
 
-    public void actualSaveShortLinkStats(String fullShortUrl, String gid, ShortLinkStatsRecordDTO statsRecord) {
-        fullShortUrl = Optional.ofNullable(fullShortUrl).orElse(statsRecord.getFullShortUrl());
+    public void actualSaveShortLinkStats(ShortLinkStatsRecordDTO statsRecord) {
+        String fullShortUrl = statsRecord.getFullShortUrl();
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl)); // 获取读写锁
         RLock rLock = readWriteLock.readLock();
         rLock.tryLock(); // 如果获取不到写锁，统计操作仍然需要进行（写操作耗时很长，不能让一个写操作阻塞大量的读操作），把任务放入延迟队列
         try {
-            if (StrUtil.isBlank(gid)) {
-                LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
-                        .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
-                ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
-                gid = shortLinkGotoDO.getGid();
-            }
+            LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                    .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+            ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
+            String  gid = shortLinkGotoDO.getGid();
             int hour = DateUtil.hour(new Date(), true);
             Week week = DateUtil.dayOfWeekEnum(new Date());
             int weekValue = week.getIso8601Value();
