@@ -26,7 +26,7 @@ public class MessageQueueIdempotentHandler {
      */
     public boolean isMessageProcessed(String messageId) {
         String key = IDEMPOTENT_KEY_PREFIX + messageId;
-        return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(key, "0", 2, TimeUnit.MINUTES));
+        return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(key, "1", 2, TimeUnit.MINUTES));
         // 设置消费标识key的过期时间的考量：
         // 1. 要足够消息队列去消费和重试，不能还没消费完成，这个标识过期了
         // 2. 不能太久，太久会一直占用redis资源，造成资源浪费和性能损失
