@@ -2,6 +2,7 @@ package com.litianyu.ohshortlink.admin.remote;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.litianyu.ohshortlink.admin.common.conversion.result.Result;
+import com.litianyu.ohshortlink.admin.config.OpenFeignConfiguration;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.litianyu.ohshortlink.admin.dto.req.RecycleBinSaveReqDTO;
@@ -21,7 +22,11 @@ import java.util.List;
  * 短链接中台远程调用服务
  * 后管用户调用短链接服务接口的时候，不是直接调用，而是通过 admin 模块代理，再发起远程调用的方法去实现
  */
-@FeignClient("short-link-project")
+@FeignClient(
+        value = "short-link-project",
+        url = "${aggregation.remote-url:}",
+        configuration = OpenFeignConfiguration.class
+)
 public interface ShortLinkActualRemoteService {
 
     /**

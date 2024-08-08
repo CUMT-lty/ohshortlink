@@ -29,6 +29,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Objects;
@@ -71,6 +72,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void register(UserRegisterReqDTO requestParam) {
         if (hasUsername(requestParam.getUsername())) { // 如果用户名不可用（用户名已存在）
             throw new ClientException(USER_NAME_EXIST);
@@ -90,8 +92,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 //  TODO：这里其实是出现了 mysql 和 redis 中数据不一致的情况了，这里是不是应该把用户名加入到 redis 布隆过滤器中，重建一致性，也防止后续总有这样的请求打到数据库
                 throw new ClientException(USER_SAVE_ERROR);
             }
-            userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername()); // 写 redis 布隆过滤器
             groupService.saveGroup(requestParam.getUsername(), "默认分组"); // 每个用户注册的时候都会有一个默认的短链接分组
+            userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername()); // 写 redis 布隆过滤器
             // 如果第二阶段失败：再次注册该用户名，mysql 给用户名字段设置了唯一，所以 mysql 的 insert 操作会失败，可以保证 mysql 中的数据没问题
             // TODO：但是会导致布隆过滤器中一直没有对应的值，但实际上该值已经存在
         } catch (DuplicateKeyException ex) {
