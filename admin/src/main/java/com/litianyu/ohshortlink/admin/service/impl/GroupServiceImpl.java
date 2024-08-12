@@ -21,7 +21,7 @@ import com.litianyu.ohshortlink.admin.remote.ShortLinkActualRemoteService;
 import com.litianyu.ohshortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.litianyu.ohshortlink.admin.service.GroupService;
 import com.litianyu.ohshortlink.admin.toolkit.RandomGenerator;
-import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
+import com.litianyu.ohshortlink.admin.common.conversion.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
