@@ -11,11 +11,7 @@ ohshortlink 是一个功能强大的短链接平台，提供全面的链接管�
 - 灵活删除：提供回收站功能，轻松恢复误删链接；
 - API 支持：提供开放接口，方便开发者集成。
 
-![image-20240818004012040](https://typora-img-1304045815.cos.ap-shanghai.myqcloud.com/202408180040728.png)
-![image-20240818004132727](https://typora-img-1304045815.cos.ap-shanghai.myqcloud.com/202408180041806.png)
-![image-20240818004327647](https://typora-img-1304045815.cos.ap-shanghai.myqcloud.com/202408180043696.png)
-![image-20240818004402811](https://typora-img-1304045815.cos.ap-shanghai.myqcloud.com/202408180044848.png)
-![image-20240818004427205](https://typora-img-1304045815.cos.ap-shanghai.myqcloud.com/202408180044244.png)
+![image-20240818011337856](https://typora-img-1304045815.cos.ap-shanghai.myqcloud.com/202408180113981.png)
 
 ## 如何快速部署？
 ### 如何部署后端服务？
