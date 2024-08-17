@@ -1,10 +1,10 @@
 <template>
   <div class="login-page">
-    <h1 class="title">ohshortlink 短链接</h1>
+<!--    <h1 class="title">ohshortlink 短链接</h1>-->
     <div class="login-box">
       <!-- 登录 -->
       <div class="logon" :class="{ hidden: !isLogin }">
-        <h2>用户登陆</h2>
+        <h2>短链接用户登陆</h2>
         <el-form ref="loginFormRef1" :model="loginForm" label-width="50px" :rules="loginFormRule">
           <div class="form-container1">
             <el-form-item prop="phone">
@@ -273,7 +273,7 @@ const changeLogin = () => {
   width: 700px;
   position: absolute;
   z-index: 999;
-  top: 52%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   box-sizing: border-box;
@@ -343,6 +343,9 @@ const changeLogin = () => {
   height: 100vh;
   overflow: hidden;
   //background-color: #FFF6DA;
+  background-image: url('@/assets/jpg/background.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 .vanta {
@@ -395,16 +398,17 @@ const changeLogin = () => {
   background: linear-gradient(to right, #95AFE1FF,#1a8fd5);
 }
 
-.title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 15%;
-  z-index: 999;
-  font-size: 40px;
-  color: #575757;
-  font-weight: bolder;
-}
+// 原标题部分样式
+//.title {
+//  position: absolute;
+//  left: 50%;
+//  transform: translateX(-50%);
+//  top: 15%;
+//  z-index: 999;
+//  font-size: 40px;
+//  color: #575757;
+//  font-weight: bolder;
+//}
 
 :deep(.el-input__suffix-inner) {
   width: 60px;
