@@ -154,7 +154,7 @@ const addUser = (formEl) => {
     if (valid) {
       // 检测用户名是否已经存在
       const res1 = await API.user.hasUsername({ username: addForm.username })
-      if (res1.data.success !== false) {
+      if (res1.data.success === true && res1.data.data === false) {  // 用户名验证成功且用户不存在
         // 注册
         const res2 = await API.user.addUser(addForm)
         // console.log(res2)
@@ -173,7 +173,7 @@ const addUser = (formEl) => {
           ElMessage.success('注册登录成功！')
           router.push('/home')
         }
-      } else {
+      } else { // 其他情况（但这里混淆了调接口失败的情况）
         ElMessage.warning('用户名已存在！')
       }
     } else {
