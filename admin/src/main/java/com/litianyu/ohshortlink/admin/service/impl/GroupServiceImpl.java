@@ -98,15 +98,16 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     private String saveGroupUniqueReturnGid() {
         String gid = RandomGenerator.generateRandom(); // 生成随机的短链接分组 id
-        if (!gidRegisterCachePenetrationBloomFilter.contains(gid)) { // 查询用户下的某个分组 id 是否存在，如果出现重复分组就重新创建
-            GroupUniqueDO groupUniqueDO = GroupUniqueDO.builder()
-                    .gid(gid)
-                    .build();
-            try {
-                groupUniqueMapper.insert(groupUniqueDO);
-            } catch (DuplicateKeyException e) {
-                return null;
-            }
+        if (gidRegisterCachePenetrationBloomFilter.contains(gid)) {
+            return null;
+        }
+        GroupUniqueDO groupUniqueDO = GroupUniqueDO.builder()
+                .gid(gid)
+                .build();
+        try {
+            groupUniqueMapper.insert(groupUniqueDO);
+        } catch (DuplicateKeyException e) {
+            return null;
         }
         return gid;
     }
