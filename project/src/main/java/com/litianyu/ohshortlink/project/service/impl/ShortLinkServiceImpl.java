@@ -432,17 +432,18 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             return;
         }
         // 短链接存在（但有可能误判）
-        // 使用分布式锁 --> 解决缓存击穿问题
+        // 使用分布式锁 --> 解决缓存击穿问题（后续需要双判）
         RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl)); // 创建分布式锁对象
         lock.lock(); // 获取分布式锁
         try {
+            // 双判，获取锁后再查一遍缓存，如果存在直接返回
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(originalLink)) {
                 shortLinkStats(buildLinkStatsRecordAndSetUser(fullShortUrl, request, response)); // 跳转之前先统计
                 ((HttpServletResponse) response).sendRedirect(originalLink);
                 return;
             }
-            // 查缓存
+            // 如果是数据库中不存在的非法链接（防缓存穿透）
             gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(gotoIsNullShortLink)) {
                 ((HttpServletResponse) response).sendRedirect("/page/notfound");
@@ -453,7 +454,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
             if (shortLinkGotoDO == null) { // 如果 mysql 中不存在该条数据，说明非法请求打到了 mysql 上
-                // 在 redis 中存一个对应的空对象
+                // 在 redis 中存一个对应的空对象，解决缓存穿透
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
                 ((HttpServletResponse) response).sendRedirect("/page/notfound"); // 跳转到不存在页面
                 return;
