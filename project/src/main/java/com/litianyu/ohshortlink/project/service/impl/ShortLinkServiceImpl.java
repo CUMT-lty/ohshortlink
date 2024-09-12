@@ -42,10 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.redisson.api.RBloomFilter;
-import org.redisson.api.RLock;
-import org.redisson.api.RReadWriteLock;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -432,9 +429,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             return;
         }
         // 短链接存在（但有可能误判）
-        // 使用分布式锁 --> 解决缓存击穿问题（后续需要双判）
-        RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl)); // 创建分布式锁对象
-        lock.lock(); // 获取分布式锁
+        // 使用 Redisson 分布式信号量代替分布式锁，解决分布式锁在高并发场景下的性能问题（信号量其实就是分锁）
+        // 获取分布式信号量
+        RPermitExpirableSemaphore semaphore = redissonClient.getPermitExpirableSemaphore(String.format(SEMAPHORE_GOTO_SHORT_LINK_KEY, fullShortUrl));
+        semaphore.trySetPermits(10); // 初始化信号量许可数量
+        // 尝试获取许可，设置有效期为 10s（防止许可不能及时释放）（如果没有获取到许可线程会阻塞在这里）
+        String acquired = semaphore.acquire(10, TimeUnit.SECONDS);
+        // 如果成功获取到许可
         try {
             // 双判，获取锁后再查一遍缓存，如果存在直接返回
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
@@ -480,7 +481,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             shortLinkStats(buildLinkStatsRecordAndSetUser(fullShortUrl, request, response)); // 跳转之前先统计
             ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());// 重定向
         } finally {
-            lock.unlock(); // 释放分布式锁
+            semaphore.release(acquired); // 释放获得的许可
         }
     }
 
