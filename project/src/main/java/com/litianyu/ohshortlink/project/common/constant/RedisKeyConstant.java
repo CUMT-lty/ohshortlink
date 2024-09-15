@@ -16,9 +16,14 @@ public class RedisKeyConstant {
     public static final String GOTO_IS_NULL_SHORT_LINK_KEY = "short-link:is-null:goto_%s";
 
     /**
-     * 短链接跳转分布式锁前缀 Key
+     * 短链接跳转分布式锁前缀 Key，%d：分片id，%s：完整长链接
      */
-    public static final String LOCK_GOTO_SHORT_LINK_KEY = "short-link:lock:goto:%s";
+    public static final String LOCK_GOTO_SHORT_LINK_KEY = "short-link:lock:%d:goto:%s";
+
+    /**
+     * 短链接跳转分布式锁分片数量
+     */
+    public static final int LOCK_GOTO_SHORT_LINK_COUNT = 10;
 
     /**
      * 短链接修改分组 ID 锁前缀 Key

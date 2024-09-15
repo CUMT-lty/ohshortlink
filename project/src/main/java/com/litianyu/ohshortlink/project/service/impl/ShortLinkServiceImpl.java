@@ -13,6 +13,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.litianyu.ohshortlink.project.common.biz.user.UserContext;
 import com.litianyu.ohshortlink.project.common.convention.exception.ClientException;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
 import com.litianyu.ohshortlink.project.common.enums.VailDateTypeEnum;
@@ -60,6 +61,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.*;
+import static com.litianyu.ohshortlink.project.common.convention.errorcode.BaseErrorCode.SERVICE_TIMEOUT_ERROR;
 
 /**
  * 短链接接口实现层
@@ -432,9 +434,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             return;
         }
         // 短链接存在（但有可能误判）
-        // 使用分布式锁 --> 解决缓存击穿问题（后续需要双判）
-        RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl)); // 创建分布式锁对象
-        lock.lock(); // 获取分布式锁
+        // 使用分片分布式锁 --> 解决缓存击穿问题，原来是一个长链接对应一把锁，现在一个长链接对应多把锁
+        // 分片策略：(userId + uuid) mod count
+        String userId = UserContext.getUserId();
+        String uuid = UUID.randomUUID().toString();
+        int lockId = (userId+uuid).hashCode() % LOCK_GOTO_SHORT_LINK_COUNT;
+        RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, lockId, fullShortUrl)); // 一个长链接对应一把锁
+        boolean isLocked = lock.tryLock(100, 10000, TimeUnit.MILLISECONDS);// 获取分布式锁，获取锁的等待时间为 100ms，超过 10s 锁自动释放
+        if (!isLocked) {
+            throw new ServiceException("获取分布式锁失败", SERVICE_TIMEOUT_ERROR);
+        }
         try {
             // 双判，获取锁后再查一遍缓存，如果存在直接返回
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
