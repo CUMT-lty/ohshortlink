@@ -39,15 +39,6 @@
         <spotless-maven-plugin.version>2.22.1</spotless-maven-plugin.version>
     </properties>
 
-    <!-- 直接下载依赖，并且将依赖传递到子类中 -->
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
-        </dependency>
-    </dependencies>
-
     <!-- dependencyManagement 不会下载依赖，只会去做版本规约，当子类真正使用依赖的时候再下载 -->
     <!-- 使用这个标签之后，子模块中的依赖不需要 <version> -->
     <dependencyManagement>
@@ -127,4 +118,25 @@
         </dependencies>
     </dependencyManagement>
 
+    <!-- 直接下载依赖，并且将依赖传递到子类中 -->
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
+        </dependency>
+
+        <!-- 单元测试依赖：junit + mockito -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

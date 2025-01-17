@@ -8,7 +8,13 @@ import com.litianyu.ohshortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.litianyu.ohshortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import com.litianyu.ohshortlink.admin.service.GroupService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -33,7 +39,6 @@ public class GroupController {
         return Results.success();
     }
 
-
     /**
      * 查询短链接分组集合
      */
@@ -55,7 +60,7 @@ public class GroupController {
      * 删除短链接分组
      */
     @DeleteMapping("/api/short-link/admin/v1/group")
-    public Result<Void> updateGroup(@RequestParam String gid) {
+    public Result<Void> deleteGroup(@RequestParam String gid) {
         groupService.deleteGroup(gid);
         return Results.success();
     }
