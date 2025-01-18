@@ -37,7 +37,7 @@ public class GroupControllerTest {
 //        MockitoAnnotations.initMocks(this);
 //    }
 
-    @Test // 这个注解不要导错了
+    @Test // 这个注解不要导错了，是 org.junit 包下的
     public void test_save() {
         ShortLinkGroupSaveReqDTO shortLinkGroupSaveReqDTO = new ShortLinkGroupSaveReqDTO();
         shortLinkGroupSaveReqDTO.setName("name");

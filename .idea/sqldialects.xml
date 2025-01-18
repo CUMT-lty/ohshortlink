@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/project/src/main/resources/mapper/LinkMapper.xml" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/admin/group/group.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/admin/group/group_multi_table.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/admin/group/group_unique.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/admin/user/user.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/admin/user/user_multi_table.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/shortlink/goto/goto_multi_table.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/shortlink/link/link.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/access_logs.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/access_stats.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/browser_stats.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/device_stats.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/local_stats.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/network_stats.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/os_stats.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/stats_today.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/sql/stats/stats_today_multi_table.sql" dialect="MySQL" />
+    <file url="PROJECT" dialect="MySQL" />
+  </component>
+</project>
