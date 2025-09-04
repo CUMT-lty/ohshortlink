@@ -14,6 +14,7 @@
         <module>admin</module>
         <module>project</module>
         <module>gateway</module>
+        <module>search</module>
     </modules>
 
     <properties>
@@ -36,7 +37,9 @@
         <jsoup.version>1.15.3</jsoup.version>
         <easyexcel.version>3.1.3</easyexcel.version>
         <rocketmq-spring-boot-starter.version>2.2.3</rocketmq-spring-boot-starter.version>
+        <spring-boot-starter-data-elasticsearch.version></spring-boot-starter-data-elasticsearch.version>
         <spotless-maven-plugin.version>2.22.1</spotless-maven-plugin.version>
+        <elasticsearch.version>7.17.0</elasticsearch.version>
     </properties>
 
     <!-- 直接下载依赖，并且将依赖传递到子类中 -->
@@ -123,6 +126,19 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+
+            <!-- ES 相关依赖 -->
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>${elasticsearch.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+                <version>${spring-boot-starter-data-elasticsearch.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
