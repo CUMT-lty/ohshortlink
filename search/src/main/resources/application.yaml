@@ -1,51 +1,21 @@
 server:
-  port: 8001 # 网关服务端口 8000
+  port: 8003
 
 spring: # 持久层配置文件
-  application: # 服务发现配置，这个不要忘记加，注册一个服务名称
-    name: short-link-project
-  datasource: # ShardingSphere 配置
-    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver # ShardingSphere 对 Driver 自定义，实现分库分表等隐藏逻辑
-    url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yaml # ShardingSphere 配置文件路径（环境默认是 dev，这个参数可以通过 java -jar -database.env=dev 的方式去传入）
-#  datasource: # 原数据库连接配置
-#    username: root
-#    password: 88888888
-#    url: jdbc:mysql://127.0.0.1:3306/ohshortlink?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&serverTimezone=GMT%2B8 # 数据库连接配置
-#    driver-class-name: com.mysql.cj.jdbc.Driver # 数据库驱动配置
-#    hikari: # 数据库连接池，springboot 2.0 之后嵌入到官方组件规约中了，并且一些分库分表中间件对它的支持更友好
-#      connection-test-query: select 1
-#      connection-timeout: 20000
-#      idle-timeout: 300000
-#      maximum-pool-size: 5
-#      minimum-idle: 5
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
-  mvc:
-    view:
-      prefix: /templates/
-      suffix: .html
-  cloud: # 服务发现配置
-    nacos:
-      discovery:
-        server-addr: 127.0.0.1:8848
-
-# TODO: es 配置需调试
-  elasticsearch:
+  elasticsearch: # es 连接配置
     rest:
-      uris: 192.168.1.36:9200
-      connection-timeout: 1s
+      uris: 127.0.0.1:9200 # 如果是多集群怎么办
+      connection-timeout: 2s
       read-timeout: 30s
 
-
-rocketmq:
-  name-server: common-rocketmq-dev.magestack.cn:9876 # 公用 rocketmq 服务
-  producer:
-    group: ohshortlink_project-service_stats-save_pg
-    topic: ohshortlink_project-service_topic
-    send-message-timeout: 2000
-    retry-times-when-send-failed: 1
-    retry-times-when-send-async-failed: 1
-  consumer:
-    group: ohshortlink_project-service_stats-save_cg
+# 通过 dts 等工具将db数据同步过来，消费后写入es
+#rocketmq:
+#  name-server: common-rocketmq-dev.magestack.cn:9876 # 公用 rocketmq 服务
+#  producer:
+#    group: ohshortlink_project-service_stats-save_pg
+#    topic: ohshortlink_project-service_topic
+#    send-message-timeout: 2000
+#    retry-times-when-send-failed: 1
+#    retry-times-when-send-async-failed: 1
+#  consumer:
+#    group: ohshortlink_project-service_stats-save_cg
