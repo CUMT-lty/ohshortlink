@@ -3,14 +3,29 @@ package com.litianyu.ohshortlink.project.mq.consumer;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.Week;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.litianyu.ohshortlink.project.common.convention.exception.ServiceException;
-import com.litianyu.ohshortlink.project.dao.entity.*;
-import com.litianyu.ohshortlink.project.dao.mapper.*;
+import com.litianyu.ohshortlink.project.dao.entity.LinkAccessLogsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkAccessStatsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkBrowserStatsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkDeviceStatsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkLocaleStatsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkNetworkStatsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkOsStatsDO;
+import com.litianyu.ohshortlink.project.dao.entity.LinkStatsTodayDO;
+import com.litianyu.ohshortlink.project.dao.entity.ShortLinkGotoDO;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkAccessLogsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkAccessStatsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkBrowserStatsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkDeviceStatsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkLocaleStatsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkNetworkStatsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkOsStatsMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.LinkStatsTodayMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkGotoMapper;
+import com.litianyu.ohshortlink.project.dao.mapper.ShortLinkMapper;
 import com.litianyu.ohshortlink.project.dto.biz.ShortLinkStatsRecordDTO;
 import com.litianyu.ohshortlink.project.mq.idempotent.MessageQueueIdempotentHandler;
 import lombok.RequiredArgsConstructor;
@@ -20,15 +35,12 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.litianyu.ohshortlink.project.common.constant.RedisKeyConstant.LOCK_GID_UPDATE_KEY;
-import static com.litianyu.ohshortlink.project.common.constant.ShortLinkConstant.AMAP_REMOTE_URL;
 
 /**
  * 短链接监控状态保存消息队列消费者
@@ -56,8 +68,6 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
 
     private final MessageQueueIdempotentHandler messageQueueIdempotentHandler;
 
-    @Value("${short-link.stats.locale.amap-key}")
-    private String statsLocaleAmapKey;
 
     @Override
     public void onMessage(Map<String, String> producerMap) {
@@ -109,28 +119,23 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
                     .date(currentDate)
                     .build();
             linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
-            Map<String, Object> localeParamMap = new HashMap<>();
-            localeParamMap.put("key", statsLocaleAmapKey);
-            localeParamMap.put("ip", statsRecord.getRemoteAddr());
-            String localeResultStr = HttpUtil.get(AMAP_REMOTE_URL, localeParamMap);
-            JSONObject localeResultObj = JSON.parseObject(localeResultStr);
-            String infoCode = localeResultObj.getString("infocode");
+
+            // 地区相关信息之前从高德开放平台获取，现在下掉，全部写成默认信息
             String actualProvince = "未知";
             String actualCity = "未知";
-            if (StrUtil.isNotBlank(infoCode) && StrUtil.equals(infoCode, "10000")) {
-                String province = localeResultObj.getString("province");
-                boolean unknownFlag = StrUtil.equals(province, "[]");
-                LinkLocaleStatsDO linkLocaleStatsDO = LinkLocaleStatsDO.builder()
-                        .province(actualProvince = unknownFlag ? actualProvince : province)
-                        .city(actualCity = unknownFlag ? actualCity : localeResultObj.getString("city"))
-                        .adcode(unknownFlag ? "未知" : localeResultObj.getString("adcode"))
-                        .cnt(1)
-                        .fullShortUrl(fullShortUrl)
-                        .country("中国")
-                        .date(currentDate)
-                        .build();
-                linkLocaleStatsMapper.shortLinkLocaleState(linkLocaleStatsDO);
-            }
+            String province = "未知";
+            boolean unknownFlag = StrUtil.equals(province, "[]");
+            LinkLocaleStatsDO linkLocaleStatsDO = LinkLocaleStatsDO.builder()
+                    .province(actualProvince = unknownFlag ? actualProvince : province)
+                    .city(actualCity)
+                    .adcode("未知")
+                    .cnt(1)
+                    .fullShortUrl(fullShortUrl)
+                    .country("中国")
+                    .date(currentDate)
+                    .build();
+            linkLocaleStatsMapper.shortLinkLocaleState(linkLocaleStatsDO);
+
             LinkOsStatsDO linkOsStatsDO = LinkOsStatsDO.builder()
                     .os(statsRecord.getOs())
                     .cnt(1)
