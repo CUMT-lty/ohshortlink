@@ -1,6 +1,7 @@
 server:
   port: 8003
 
+# TODO：es 配置待测试
 spring: # 持久层配置文件
   elasticsearch: # es 连接配置
     rest:
@@ -8,14 +9,14 @@ spring: # 持久层配置文件
       connection-timeout: 2s
       read-timeout: 30s
 
-# 通过 dts 等工具将db数据同步过来，消费后写入es
-#rocketmq:
-#  name-server: common-rocketmq-dev.magestack.cn:9876 # 公用 rocketmq 服务
-#  producer:
-#    group: ohshortlink_project-service_stats-save_pg
-#    topic: ohshortlink_project-service_topic
-#    send-message-timeout: 2000
-#    retry-times-when-send-failed: 1
-#    retry-times-when-send-async-failed: 1
-#  consumer:
-#    group: ohshortlink_project-service_stats-save_cg
+rocketmq:
+  name-server: 127.0.0.1:9876 # 本地 mq 服务
+  producer:
+    # 必须指定 group
+    group: ohshortlink_es_sync_pg # pg 表示生产者组
+    send-message-timeout: 2000
+    retry-times-when-send-failed: 1
+    retry-times-when-send-async-failed: 1
+    topic: es_sync_topic # 自定义的配置
+  consumer:
+     group: ohshortlink_es_sync_cg # cg 表示消费者组
